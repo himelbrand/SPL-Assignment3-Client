@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <boost/asio.hpp>
+#include <Message.h>
 
 using boost::asio::ip::tcp;
 
@@ -19,7 +20,8 @@ public:
     ConnectionHandler(std::string host, short port);
     virtual ~ConnectionHandler();
 
-    bool encode(std::string & message);
+    bool encodeInput(std::string & message);
+    bool encodeMessage(Message & message);
     // Connect to the remote machine
     bool connect();
  

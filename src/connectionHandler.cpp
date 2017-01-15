@@ -1,5 +1,8 @@
 #include <connectionHandler.h>
 #include <boost/algorithm/string.hpp>
+#include <Login.h>
+#include <DirRequest.h>
+
 using boost::asio::ip::tcp;
 
 using std::cin;
@@ -68,7 +71,7 @@ bool ConnectionHandler::getLine(std::string& line) {
 
 }
 
-bool ConnectionHandler::encode(std::string &message){
+bool ConnectionHandler::encodeInput(std::string &message){
 
     std::vector<std::string> words;
     boost::split(words, message, boost::is_space());
@@ -78,9 +81,13 @@ bool ConnectionHandler::encode(std::string &message){
 	}else if(command=="WRQ"){
 
 	}else if(command =="LOGRQ"){
-
+        if(words.size() != 2){
+            Login loginMessage(words.at(1));
+        }else{
+            std::cout << "please enter username" << std::endl;
+        }
 	}else if(command=="DIRQ"){
-
+        DirReq
 	}else if(command=="DELRQ"){
 
 	}else if(command=="DISC"){
@@ -89,6 +96,8 @@ bool ConnectionHandler::encode(std::string &message){
 
 	}
 }
+
+
 
 
 bool ConnectionHandler::sendLine(std::string& line) {
