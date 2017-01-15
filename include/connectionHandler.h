@@ -5,7 +5,7 @@
 #include <iostream>
 #include <boost/asio.hpp>
 #include <Message.h>
-
+#include <fstream>
 using boost::asio::ip::tcp;
 
 class ConnectionHandler {
@@ -13,15 +13,24 @@ private:
 	const std::string host_;
 	const short port_;
 	boost::asio::io_service io_service_;   // Provides core I/O functionality
-	tcp::socket socket_; 
+	tcp::socket socket_;
+
+    std::fstream fs;
+    short bytesToShort(char* bytesArr);
+    void shortToBytes(short num, char* bytesArr);
+
+
  
 public:
 
     ConnectionHandler(std::string host, short port);
     virtual ~ConnectionHandler();
 
-    bool encodeInput(std::string & message);
+
+
+    char* encodeInput(std::string & message);
     bool encodeMessage(Message & message);
+    bool decode();
     // Connect to the remote machine
     bool connect();
  

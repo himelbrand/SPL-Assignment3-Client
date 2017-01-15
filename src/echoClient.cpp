@@ -42,7 +42,6 @@ int main (int argc, char *argv[]) {
         while (!lineQueue.empty()) {
             std::string newLine = lineQueue.front();
             connectionHandler.sendLine(newLine);
-
         }
 
 
@@ -70,10 +69,12 @@ int main (int argc, char *argv[]) {
 
             // Get back an answer: by using the expected number of bytes (len bytes + newline delimiter)
             // We could also use: connectionHandler.getline(answer) and then get the answer without the newline char at the end
-            if (!connectionHandler.getBytes(answer,)) {
+            if (!connectionHandler.getBytes(answer,2)) {
                 std::cout << "Disconnected. Exiting...\n" << std::endl;
                 break;
             }
+
+
 
             len = answer.length();
             // A C string must end with a 0 char delimiter.  When we filled the answer buffer from the socket
