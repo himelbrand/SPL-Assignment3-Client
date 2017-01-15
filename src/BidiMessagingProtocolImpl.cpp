@@ -3,21 +3,12 @@
 #include "../../../../Library/Containers/com.apple.mail/Data/Library/Mail Downloads/EED0158E-6473-41BB-BBA3-BAE939304AA2/cpp/DataMessage.h"
 #include "ReadWrite.h"
 #include "Error.h"
-#include "../../../../Library/Containers/com.apple.mail/Data/Library/Mail Downloads/EED0158E-6473-41BB-BBA3-BAE939304AA2/cpp/Acknowledge.h"
-#include "../../../../Library/Containers/com.apple.mail/Data/Library/Mail Downloads/EED0158E-6473-41BB-BBA3-BAE939304AA2/cpp/Broadcast.h"
+#include "Acknowledge.h"
+#include "Broadcast.h"
 #include "Login.h"
-#include "../../../../Library/Containers/com.apple.mail/Data/Library/Mail Downloads/EED0158E-6473-41BB-BBA3-BAE939304AA2/cpp/DeleteFile.h"
+#include "DeleteFile.h"
 
-namespace bgu
-{
-	namespace spl171
-	{
-		namespace net
-		{
-			namespace impl
-			{
-				namespace TFTP
-				{
+
 					using bgu::spl171::net::api::bidi::BidiMessagingProtocol;
 					using bgu::spl171::net::api::bidi::Connections;
 					using DataMessage = bgu::spl171::net::impl::TFTP::msg::DataMessage;

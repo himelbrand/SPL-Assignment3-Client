@@ -1,18 +1,5 @@
 #include "ReadWrite.h"
 
-namespace bgu
-{
-	namespace spl171
-	{
-		namespace net
-		{
-			namespace impl
-			{
-				namespace TFTP
-				{
-					namespace msg
-					{
-
 						ReadWrite::ReadWrite(short opCode, const std::wstring &filename) : Message(opCode)
 						{
 							this->filename = filename;
@@ -23,9 +10,3 @@ namespace bgu
 						{
 							return filename;
 						}
-					}
-				}
-			}
-		}
-	}
-}
