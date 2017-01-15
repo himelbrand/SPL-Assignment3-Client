@@ -1,8 +1,0 @@
-cmake_minimum_required(VERSION 3.6)
-project(SPL-Assignment3-Client)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-FIND_PACKAGE( Boost 1.40 COMPONENTS program_options REQUIRED )
-include_directories(include ${Boost_INCLUDE_DIR})
-set(SOURCE_FILES src/echoClient.cpp src/connectionHandler.cpp)
-add_executable(Client ${SOURCE_FILES})
-TARGET_LINK_LIBRARIES( Client ${Boost_LIBRARIES} )

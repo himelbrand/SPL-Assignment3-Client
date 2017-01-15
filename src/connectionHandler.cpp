@@ -1,5 +1,5 @@
 #include <connectionHandler.h>
- 
+#include <boost/algorithm/string.hpp>
 using boost::asio::ip::tcp;
 
 using std::cin;
@@ -7,7 +7,7 @@ using std::cout;
 using std::cerr;
 using std::endl;
 using std::string;
- 
+
 ConnectionHandler::ConnectionHandler(string host, short port): host_(host), port_(port), io_service_(), socket_(io_service_){}
     
 ConnectionHandler::~ConnectionHandler() {
@@ -65,9 +65,20 @@ bool ConnectionHandler::sendBytes(const char bytes[], int bytesToWrite) {
  
 bool ConnectionHandler::getLine(std::string& line) {
     return getFrameAscii(line, '\n');
+
 }
 
+bool ConnectionHandler::encode(std::string &message){
+
+    std::vector<std::string> words;
+    boost::split(words, message, boost::is_space());
+
+    if(words.at(0))
+}
+
+
 bool ConnectionHandler::sendLine(std::string& line) {
+
     return sendFrameAscii(line, '\n');
 }
  
