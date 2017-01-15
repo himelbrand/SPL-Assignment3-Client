@@ -16,6 +16,8 @@ private:
 	tcp::socket socket_;
 
     std::fstream fs;
+    std::string fileName;
+
     short bytesToShort(char* bytesArr);
     void shortToBytes(short num, char* bytesArr);
 

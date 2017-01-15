@@ -48,11 +48,33 @@ bool ConnectionHandler::decode(){
     }
     switch(op[1]){
         case 3: // DATA
+            char blockNumberD[2];
+            char packetSize[2];
+            getBytes(packetSize,2);
+            getBytes(blockNumberD,2);
+            char dataBytes[bytesToShort(packetSize)];
+            getBytes(dataBytes, sizeof(dataBytes));
+
+            fs.write(dataBytes, sizeof(dataBytes));
+
+            if(sizeof(dataBytes) < 512){//TODO check databytes size , need to be 512 sometimes
+                fileName = "";
+                fs.close();
+            }
+
+            char ackMessage[4];
+            ackMessage[0] = 0;
+            ackMessage[1] = 4;
+            ackMessage[2] = blockNumberD[0];
+            ackMessage[3] = blockNumberD[1];
+
+            sendBytes(ackMessage,4);
+
             break;
         case 4://ACK
-            char blockNumber[2];
-            getBytes(blockNumber,2);
-            short bN = bytesToShort(blockNumber);
+            char blockNumberA[2];
+            getBytes(blockNumberA,2);
+            short bN = bytesToShort(blockNumberA);
             std::cout << "> ACK " + bN << std::endl;
             if(fs.is_open()){
                 char* dataBytes;
@@ -62,12 +84,22 @@ bool ConnectionHandler::decode(){
                 dataMessage[1] = 3;
                 bN++;
 
-                shortToBytes(bN,blockNumber);
-                dataMessage[2] = blockNumber[0];
-                dataMessage[3] = blockNumber[1];
+                shortToBytes(bN,blockNumberA);
+                dataMessage[2] = blockNumberA[0];
+                dataMessage[3] = blockNumberA[1];
 
+                shortToBytes(sizeof(dataBytes),blockNumberA);
+
+                dataMessage[4] = blockNumberA[0];
+                dataMessage[5] = blockNumberA[1];
+
+                std::strcat(dataMessage,dataBytes);
+                sendBytes(dataMessage, sizeof(dataMessage));
+                if(sizeof(dataBytes) < 512){
+                    fs.close;
+                }
             }else{
-
+                std::cout << " fs close " << std::endl;
             }
             break;
         case 5: //Error
@@ -137,6 +169,14 @@ char*  ConnectionHandler::encodeInput(std::string &message){
             }
             bytes[i] = '\0' ;
             ans = bytes;
+
+            fs.open(words.at(1));
+           if(fs){
+               std::cout << "The file is already exist!!" << std::endl;
+               return false;
+           }else{
+               fileName = words.at(1);
+           }
         }else{
             std::cout << "please enter username" << std::endl;
         }
