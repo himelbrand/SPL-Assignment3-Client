@@ -72,7 +72,6 @@ bool ConnectionHandler::getLine(std::string& line) {
 }
 
 bool ConnectionHandler::encodeInput(std::string &message){
-
     std::vector<std::string> words;
     boost::split(words, message, boost::is_space());
 	std::string command = words.at(0);
@@ -82,12 +81,23 @@ bool ConnectionHandler::encodeInput(std::string &message){
 
 	}else if(command =="LOGRQ"){
         if(words.size() != 2){
-            Login loginMessage(words.at(1));
+            char  bytes[words.at(1).length() +3];
+
+            bytes[0] = 0;//one byte
+            bytes[1] = 7;//another byte
+           int i=2;
+            for(char c:words.at(1)){
+                bytes[i] = c;
+                i++;
+            }
+            bytes[i] = '\0' ;
+
+
         }else{
             std::cout << "please enter username" << std::endl;
         }
 	}else if(command=="DIRQ"){
-        DirReq
+        DirRequest dirMessage()
 	}else if(command=="DELRQ"){
 
 	}else if(command=="DISC"){
