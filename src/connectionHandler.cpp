@@ -72,8 +72,22 @@ bool ConnectionHandler::encode(std::string &message){
 
     std::vector<std::string> words;
     boost::split(words, message, boost::is_space());
+	std::string command = words.at(0);
+    if(command=="RRQ"){
 
-    if(words.at(0))
+	}else if(command=="WRQ"){
+
+	}else if(command =="LOGRQ"){
+
+	}else if(command=="DIRQ"){
+
+	}else if(command=="DELRQ"){
+
+	}else if(command=="DISC"){
+
+	}else{//not a valid command
+
+	}
 }
 
 
