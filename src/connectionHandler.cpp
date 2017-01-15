@@ -33,7 +33,89 @@ bool ConnectionHandler::connect() {
     }
     return true;
 }
- 
+
+bool ConnectionHandler::getLine(std::string& line) {
+    return getFrameAscii(line, '\n');
+
+}
+
+
+bool ConnectionHandler::decode(){
+    char op[2];
+
+    if(!getBytes(op,2)){
+        return false;
+    }
+    switch(op[1]){
+        case 3: // DATA
+            char blockNumberD[2];
+            char packetSize[2];
+            getBytes(packetSize,2);
+            getBytes(blockNumberD,2);
+            char dataBytes[bytesToShort(packetSize)];
+            getBytes(dataBytes, sizeof(dataBytes));
+
+            fs.write(dataBytes, sizeof(dataBytes));
+
+            if(sizeof(dataBytes) < 512){//TODO check databytes size , need to be 512 sometimes
+                fileName = "";
+                fs.close();
+            }
+
+            char ackMessage[4];
+            ackMessage[0] = 0;
+            ackMessage[1] = 4;
+            ackMessage[2] = blockNumberD[0];
+            ackMessage[3] = blockNumberD[1];
+
+            sendBytes(ackMessage,4);
+
+            break;
+        case 4://ACK
+            char blockNumberA[2];
+            getBytes(blockNumberA,2);
+            short bN = bytesToShort(blockNumberA);
+            std::cout << "> ACK " + bN << std::endl;
+            if(fs.is_open()){
+                char* dataBytes;
+             fs.readsome(dataBytes,512);
+                char dataMessage[sizeof(dataBytes) + 6];
+                dataMessage[0] = 0;
+                dataMessage[1] = 3;
+                bN++;
+
+                shortToBytes(bN,blockNumberA);
+                dataMessage[2] = blockNumberA[0];
+                dataMessage[3] = blockNumberA[1];
+
+                shortToBytes(sizeof(dataBytes),blockNumberA);
+
+                dataMessage[4] = blockNumberA[0];
+                dataMessage[5] = blockNumberA[1];
+
+                std::strcat(dataMessage,dataBytes);
+                sendBytes(dataMessage, sizeof(dataMessage));
+                if(sizeof(dataBytes) < 512){
+                    fs.close;
+                }
+            }else{
+                std::cout << " fs close " << std::endl;
+            }
+            break;
+        case 5: //Error
+            char errorCode[2];
+            getBytes(errorCode,2);
+            std::cout << "> Error " + errorCode[1] << std::endl;
+            std:string errorMessage;
+            return getFrameAscii(errorMessage,'\0');
+            break;
+        case 9://Bcast
+            break;
+        default:
+            return false;
+    }
+}
+
 bool ConnectionHandler::getBytes(char bytes[], unsigned int bytesToRead) {
     size_t tmp = 0;
 	boost::system::error_code error;
@@ -66,19 +148,64 @@ bool ConnectionHandler::sendBytes(const char bytes[], int bytesToWrite) {
     return true;
 }
  
-bool ConnectionHandler::getLine(std::string& line) {
-    return getFrameAscii(line, '\n');
 
-}
 
-bool ConnectionHandler::encodeInput(std::string &message){
+char*  ConnectionHandler::encodeInput(std::string &message){
     std::vector<std::string> words;
     boost::split(words, message, boost::is_space());
 	std::string command = words.at(0);
+    char* ans;
+
     if(command=="RRQ"){
+        if(words.size() != 2){
+            char  bytes[words.at(1).length() +3];
+
+            bytes[0] = 0;//one byte
+            bytes[1] = 1;//another byte
+            int i=2;
+            for(char c:words.at(1)){
+                bytes[i] = c;
+                i++;
+            }
+            bytes[i] = '\0' ;
+            ans = bytes;
+
+            fs.open(words.at(1));
+           if(fs){
+               std::cout << "The file is already exist!!" << std::endl;
+               return false;
+           }else{
+               fileName = words.at(1);
+           }
+        }else{
+            std::cout << "please enter username" << std::endl;
+        }
+
 
 	}else if(command=="WRQ"){
+        if(words.size() != 2){
+            char  bytes[words.at(1).length() +3];
 
+            bytes[0] = 0;//one byte
+            bytes[1] = 2;//another byte
+            int i=2;
+            for(char c:words.at(1)){
+                bytes[i] = c;
+                i++;
+            }
+            bytes[i] = '\0' ;
+            ans = bytes;
+
+            fs.open(words.at(1));
+            if(!fs.good()){
+                std::cout << "File not exist!!" << std::endl;
+                return false;
+            }
+
+
+        }else{
+            std::cout << "please enter username" << std::endl;
+        }
 	}else if(command =="LOGRQ"){
         if(words.size() != 2){
             char  bytes[words.at(1).length() +3];
@@ -91,20 +218,42 @@ bool ConnectionHandler::encodeInput(std::string &message){
                 i++;
             }
             bytes[i] = '\0' ;
-
+            ans = bytes;
 
         }else{
             std::cout << "please enter username" << std::endl;
         }
 	}else if(command=="DIRQ"){
-        DirRequest dirMessage()
+        char  bytes[2];
+        bytes[0] = 0;
+        bytes[1] = 6;
+
+        ans = bytes;
+
 	}else if(command=="DELRQ"){
+        if(words.size() != 2){
+            char  bytes[words.at(1).length() +3];
+
+            bytes[0] = 0;//one byte
+            bytes[1] = 8;//another byte
+            int i=2;
+            for(char c:words.at(1)){
+                bytes[i] = c;
+                i++;
+            }
+            bytes[i] = '\0' ;
+            ans = bytes;
+        }
 
 	}else if(command=="DISC"){
-
+        char  bytes[2];
+        bytes[0] = 0;
+        bytes[1] = 10;
+        ans = bytes;
 	}else{//not a valid command
-
+        return nullptr;
 	}
+    return ans;
 }
 
 
@@ -112,12 +261,22 @@ bool ConnectionHandler::encodeInput(std::string &message){
 
 bool ConnectionHandler::sendLine(std::string& line) {
 
-    return sendFrameAscii(line, '\n');
+    if(!line.empty()) {
+        char * encodeMessage = encodeInput(line);
+        if(encodeMessage != nullptr){
+            return sendBytes(encodeMessage, sizeof(encodeMessage));;
+        }else{
+            return false;
+        }
+    } else{
+        return false;
+    }
+
 }
  
 bool ConnectionHandler::getFrameAscii(std::string& frame, char delimiter) {
     char ch;
-    // Stop when we encounter the null character. 
+    // Stop when we encounter the null character.
     // Notice that the null character is not appended to the frame string.
     try {
 		do{
@@ -131,17 +290,29 @@ bool ConnectionHandler::getFrameAscii(std::string& frame, char delimiter) {
     return true;
 }
  
-bool ConnectionHandler::sendFrameAscii(const std::string& frame, char delimiter) {
-	bool result=sendBytes(frame.c_str(),frame.length());
-	if(!result) return false;
-	return sendBytes(&delimiter,1);
-}
+//bool ConnectionHandler::sendFrameAscii(const std::string& frame, char delimiter) {
+//	bool result=sendBytes(frame.c_str(),frame.length());
+//	if(!result) return false;
+//	return sendBytes(&delimiter,1);
+//}
  
 // Close down the connection properly.
 void ConnectionHandler::close() {
-    try{
+    try {
         socket_.close();
     } catch (...) {
         std::cout << "closing failed: connection already closed" << std::endl;
     }
 }
+    void ConnectionHandler::shortToBytes(short num, char* bytesArr)
+    {
+        bytesArr[0] = ((num >> 8) & 0xFF);
+        bytesArr[1] = (num & 0xFF);
+    }
+
+    short ConnectionHandler::bytesToShort(char* bytesArr)
+    {
+        short result = (short)((bytesArr[0] & 0xff) << 8);
+        result += (short)(bytesArr[1] & 0xff);
+        return result;
+    }
