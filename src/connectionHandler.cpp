@@ -13,7 +13,7 @@ using std::string;
 bool ConnectionHandler::keepListen = false;
 
 
-ConnectionHandler::ConnectionHandler(string host, short port): host_(host), port_(port), io_service_(), socket_(io_service_){}
+ConnectionHandler::ConnectionHandler(string host, short port): host_(host), port_(port), io_service_(), socket_(io_service_),fs(),fileName(){}
     
 ConnectionHandler::~ConnectionHandler() {
     close();
@@ -99,7 +99,7 @@ bool ConnectionHandler::decode(){
             short bN = bytesToShort(blockNumberA);
             std::cout << "> ACK " + bN << std::endl;
             if (fs.is_open()) {
-                char *dataBytes;
+                char *dataBytes = nullptr;
                 try {
                     fs.readsome(dataBytes, 512);
                 } catch (int e) {
@@ -143,21 +143,20 @@ bool ConnectionHandler::decode(){
             char errorCode[2];
             getBytes(errorCode, 2);
             std::cout << "> Error " + errorCode[1] << std::endl;
-            std:
             string errorMessage;
             keepListen = false;
             return getFrameAscii(errorMessage, '\0');
         }
         case 9: {//Bcast
             keepListen = false;
-            break;
+			break;
         }
         default: {
             keepListen = false;//TODO: check if needed
             return false;
-            break;
         }
     }
+	return true;
 }
 
 bool ConnectionHandler::getBytes(char bytes[], unsigned int bytesToRead) {
