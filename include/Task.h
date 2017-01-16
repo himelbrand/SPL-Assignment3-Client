@@ -14,9 +14,9 @@ public:
         while(true) {
             const short bufsize = 1024;
             char buf[bufsize];
+            std::cout << "< " << std::end;
             std::cin.getline(buf, bufsize);
             std::string line(buf);
-
             lineQueue.push(line);
         }
     }

@@ -18,6 +18,7 @@ ConnectionHandler::~ConnectionHandler() {
 }
  
 bool ConnectionHandler::connect() {
+
     std::cout << "Starting connect to " 
         << host_ << ":" << port_ << std::endl;
     try {
@@ -57,7 +58,7 @@ bool ConnectionHandler::decode(){
 			if(!fs.is_open()){
 				std::cout << dataBytes << std::end;
 				if (sizeof(dataBytes) < 512) {//TODO check databytes size , need to be 512 sometimes
-
+					keepListen = false;
 				}
 			}else {
 				try {
@@ -74,7 +75,7 @@ bool ConnectionHandler::decode(){
 				if (sizeof(dataBytes) < 512) {//TODO check databytes size , need to be 512 sometimes
 					fileName = "";
 					fs.close();
-
+					keepListen = false;
 				}
 			}
 				char ackMessage[4];
@@ -124,8 +125,10 @@ bool ConnectionHandler::decode(){
                 sendBytes(dataMessage, sizeof(dataMessage));
                 if(sizeof(dataBytes) < 512){
                     fs.close;
+					keepListen = false;
                 }
             }else{
+				keepListen = false;
                 std::cout << " fs close " << std::endl;
             }
             break;
@@ -134,11 +137,13 @@ bool ConnectionHandler::decode(){
             getBytes(errorCode,2);
             std::cout << "> Error " + errorCode[1] << std::endl;
             std:string errorMessage;
+			keepListen = false;
             return getFrameAscii(errorMessage,'\0');
-            break;
         case 9://Bcast
+			keepListen = false;
             break;
         default:
+			keepListen = false;//TODO: check if needed
             return false;
     }
 }
