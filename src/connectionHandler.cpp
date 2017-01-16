@@ -99,7 +99,7 @@ bool ConnectionHandler::decode(){
             short bN = bytesToShort(blockNumberA);
             std::cout << "> ACK " + bN << std::endl;
             if (fs.is_open()) {
-                char *dataBytes;
+                char *dataBytes= nullptr;
                 try {
                     fs.readsome(dataBytes, 512);
                 } catch (int e) {
@@ -143,7 +143,6 @@ bool ConnectionHandler::decode(){
             char errorCode[2];
             getBytes(errorCode, 2);
             std::cout << "> Error " + errorCode[1] << std::endl;
-            std:
             string errorMessage;
             keepListen = false;
             return getFrameAscii(errorMessage, '\0');
