@@ -8,7 +8,7 @@
 void serverListen();
 char sendBuf[1024];
 static bool disconnect = false;
-
+bool keepListen = true;
 std::queue<std::string> lineQueue;
 
 /**
@@ -39,11 +39,13 @@ int main (int argc, char *argv[]) {
 
 
     while (!disconnect) {
+
         if(!lineQueue.empty()) {
             std::string newLine = lineQueue.front();
             connectionHandler.sendLine(newLine);
+            keepListen = true;
 
-            while(continue){
+            while(keepListen){
                 connectionHandler.decode();
             }
         }
