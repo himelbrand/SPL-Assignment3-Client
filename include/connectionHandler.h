@@ -31,8 +31,9 @@ public:
 
      static bool keepListen;
 
+
+
     char* encodeInput(std::string & message);
-    bool encodeMessage(Message & message);
     bool decode();
     // Connect to the remote machine
     bool connect();

@@ -2,11 +2,8 @@
 #include <connectionHandler.h>
 #include <queue>
 #include <boost/thread.hpp>
-#include <tclDecls.h>
 #include <Task.h>
 
-void serverListen();
-char sendBuf[1024];
 static bool disconnect = false;
 std::queue<std::string> lineQueue;
 
@@ -43,10 +40,11 @@ int main (int argc, char *argv[]) {
             std::string newLine = lineQueue.front();
             connectionHandler.sendLine(newLine);
             connectionHandler.keepListen = true;
-
-            while(keepListen){
+            std::cout << "enter decode" << std::endl;
+            while(connectionHandler.keepListen){
                 connectionHandler.decode();
             }
+            std::cout << "exit decode" << std::endl;
         }
 
 
