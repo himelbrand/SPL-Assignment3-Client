@@ -55,7 +55,7 @@ bool ConnectionHandler::decode(){
             char dataBytes[bytesToShort(packetSize)];
             getBytes(dataBytes, sizeof(dataBytes));
 			if(!fs.is_open()){
-				std::cout << dataBytes << end;
+				std::cout << dataBytes << std::end;
 				if (sizeof(dataBytes) < 512) {//TODO check databytes size , need to be 512 sometimes
 
 				}
@@ -74,6 +74,7 @@ bool ConnectionHandler::decode(){
 				if (sizeof(dataBytes) < 512) {//TODO check databytes size , need to be 512 sometimes
 					fileName = "";
 					fs.close();
+
 				}
 			}
 				char ackMessage[4];
