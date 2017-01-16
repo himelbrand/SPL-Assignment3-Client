@@ -57,11 +57,12 @@ bool ConnectionHandler::decode(){
 
             fs.write(dataBytes, sizeof(dataBytes));
 
+
             if(sizeof(dataBytes) < 512){//TODO check databytes size , need to be 512 sometimes
                 fileName = "";
                 fs.close();
             }
-            
+
             char ackMessage[4];
             ackMessage[0] = 0;
             ackMessage[1] = 4;

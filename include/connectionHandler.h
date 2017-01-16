@@ -29,7 +29,7 @@ public:
     virtual ~ConnectionHandler();
 
 
-    bool keepListen;
+     static bool keepListen;
 
     char* encodeInput(std::string & message);
     bool encodeMessage(Message & message);
