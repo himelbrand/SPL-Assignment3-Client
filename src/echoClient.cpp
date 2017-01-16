@@ -32,6 +32,8 @@ int main (int argc, char *argv[]) {
     ConnectionHandler connectionHandler(host, port);
     if (!connectionHandler.connect()) {
         std::cerr << "Cannot connect to " << host << ":" << port << std::endl;
+        std::cerr << "Cannot connect to " << port << ":" << port << std::endl;
+        std::cerr << "Cannot connect to " << host << ":" << port << std::endl;
         return 1;
     }
 	
@@ -40,20 +42,21 @@ int main (int argc, char *argv[]) {
     boost::mutex mutex;
    // Task task1(1, &mutex);
     boost::thread th1(run);
-    th1.join();
 
 
     while (!disconnect) {
-
-        if(/*!Task::*/lineQueue.empty()) {
+        if(/*!Task::*/!lineQueue.empty()) {
             std::string newLine = /*Task::*/lineQueue.front();
-            connectionHandler.sendLine(newLine);
-            connectionHandler.keepListen = true;
-            std::cout << "enter decode" << std::endl;
+            lineQueue.pop();
+
+            connectionHandler.keepListen = connectionHandler.sendLine(newLine);
+
             while(connectionHandler.keepListen){
+                std::cout << "***************enter decode" << std::endl;
                 connectionHandler.decode();
+                std::cout << "*****************exit decode" << std::endl;
             }
-            std::cout << "exit decode" << std::endl;
+
         }
 
 

@@ -44,6 +44,7 @@ bool ConnectionHandler::getLine(std::string& line) {
 
 
 bool ConnectionHandler::decode(){
+
     char op[2];
 
     if(!getBytes(op,2)){
@@ -135,7 +136,7 @@ bool ConnectionHandler::decode(){
                 }
             } else {
                 keepListen = false;
-                std::cout << " fs close " << std::endl;
+               // std::cout << " fs close " << std::endl;
             }
     }
             break;
@@ -178,6 +179,8 @@ bool ConnectionHandler::getBytes(char bytes[], unsigned int bytesToRead) {
 
 bool ConnectionHandler::sendBytes(const char bytes[], int bytesToWrite) {
     int tmp = 0;
+ //   std::cout << "byte to write: " << bytesToWrite << std::endl;
+ //   std::cout << "size of bytes: " << sizeof(bytes) << std::endl;
 	boost::system::error_code error;
     try {
         while (!error && bytesToWrite > tmp ) {
@@ -198,11 +201,10 @@ char*  ConnectionHandler::encodeInput(std::string &message){
     std::vector<std::string> words;
     boost::split(words, message, boost::is_space());
 	std::string command = words.at(0);
-    char* ans = nullptr;
 
     if(command=="RRQ"){
         if(words.size() != 2){
-            char  bytes[words.at(1).length() +3];
+            char  *bytes = new char [words.at(1).length() +3];
 
             bytes[0] = 0;//one byte
             bytes[1] = 1;//another byte
@@ -212,7 +214,6 @@ char*  ConnectionHandler::encodeInput(std::string &message){
                 i++;
             }
             bytes[i] = '\0' ;
-            ans = bytes;
 
             fs.open(words.at(1));
            if(fs){
@@ -221,14 +222,17 @@ char*  ConnectionHandler::encodeInput(std::string &message){
            }else{
                fileName = words.at(1);
            }
+            return bytes;
         }else{
             std::cout << "please enter username" << std::endl;
         }
 
 
+
+
 	}else if(command=="WRQ"){
         if(words.size() != 2){
-            char  bytes[words.at(1).length() +3];
+            char  * bytes = new char[words.at(1).length() +3];
 
             bytes[0] = 0;//one byte
             bytes[1] = 2;//another byte
@@ -238,7 +242,6 @@ char*  ConnectionHandler::encodeInput(std::string &message){
                 i++;
             }
             bytes[i] = '\0' ;
-            ans = bytes;
 
             fs.open(words.at(1));
             if(!fs.good()){
@@ -246,37 +249,52 @@ char*  ConnectionHandler::encodeInput(std::string &message){
                 return nullptr;
             }
 
-
+            return bytes;
         }else{
             std::cout << "please enter username" << std::endl;
         }
 	}else if(command =="LOGRQ"){
-        if(words.size() != 2){
-            char  bytes[words.at(1).length() +3];
+        if(words.size() == 2){
 
-            bytes[0] = 0;//one byte
-            bytes[1] = 7;//another byte
+            char  *bytess = new char[123];
+
+std::cout << "bytes size is " << sizeof(bytess) << "  words length is  " << words.at(1).length()<< std::endl;
+            bytess[0] = 0;
+            bytess[1] = 7;
+            bytess[122] = 7;
+            bytess[12] = 7;
+
+            std::cout << std::to_string(bytess[0]) << std::endl;
+            std::cout << std::to_string(bytess[1]) << std::endl;
+
+
+            std::cout << "\"!!!!!!!!!!!!!!!!!!!!!!!!!\"" << std::endl;
+
            int i=2;
             for(char c:words.at(1)){
-                bytes[i] = c;
+                bytess[i] = c;
                 i++;
             }
-            bytes[i] = '\0' ;
-            ans = bytes;
+            bytess[i] = '\0';
+//
+            std::cout << "$$$$$$$$$$$$$$$$$$$$" << sizeof(bytess) << "---" << i<< std::endl;
 
+            return bytess;
         }else{
             std::cout << "please enter username" << std::endl;
         }
 	}else if(command=="DIRQ"){
-        char  bytes[2];
+        std::cout << "V5" << std::endl;
+        char  * bytes = new char[2];
         bytes[0] = 0;
         bytes[1] = 6;
 
-        ans = bytes;
+        return bytes;
 
 	}else if(command=="DELRQ"){
+        std::cout << "V3" << std::endl;
         if(words.size() != 2){
-            char  bytes[words.at(1).length() +3];
+            char  * bytes = new char[words.at(1).length() +3];
 
             bytes[0] = 0;//one byte
             bytes[1] = 8;//another byte
@@ -286,30 +304,41 @@ char*  ConnectionHandler::encodeInput(std::string &message){
                 i++;
             }
             bytes[i] = '\0' ;
-            ans = bytes;
+            return bytes;
         }
 
 	}else if(command=="DISC"){
-        char  bytes[2];
+        std::cout << "V2" << std::endl;
+        char * bytes = new char[2];
         bytes[0] = 0;
         bytes[1] = 10;
-        ans = bytes;
-	}else{//not a valid command
-        return nullptr;
+        return bytes;
 	}
-    return ans;
+    return nullptr;
+//    std::cout << "@@@@@@@@@@@@@@@@@@@@@@@" << std::endl;
+//
+//    std::cout << ans[0] << std::endl;
+//    std::cout << ans[1] << std::endl;
+//
+//    std::cout << "@@@@@@@@@@@@@@@@@@@@@@@" << std::endl;
+
+
 }
 
 
 
 
 bool ConnectionHandler::sendLine(std::string& line) {
-
     if(!line.empty()) {
-        char * encodeMessage = encodeInput(line);
+        char  * encodeMessage = encodeInput(line);
+
+        std::cout <<"send lind encodeMessage size " << sizeof(encodeMessage) << std::endl;
         if(encodeMessage != nullptr){
-            return sendBytes(encodeMessage, sizeof(encodeMessage));;
+            bool send =  sendBytes(encodeMessage, sizeof(encodeMessage));
+            delete[] encodeMessage;
+            return send;
         }else{
+            std::cout << "*************not valid command" <<  std::endl;
             return false;
         }
     } else{
