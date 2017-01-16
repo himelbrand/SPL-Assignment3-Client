@@ -9,6 +9,10 @@ using std::cerr;
 using std::endl;
 using std::string;
 
+
+bool ConnectionHandler::keepListen = false;
+
+
 ConnectionHandler::ConnectionHandler(string host, short port): host_(host), port_(port), io_service_(), socket_(io_service_){}
     
 ConnectionHandler::~ConnectionHandler() {
