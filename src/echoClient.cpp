@@ -2,13 +2,23 @@
 #include <connectionHandler.h>
 #include <queue>
 #include <boost/thread.hpp>
-#include <Task.h>
+//#include <Task.h>
 
 static bool disconnect = false;
-
+std::queue<std::string> lineQueue;
 /**
 * This code assumes that the server replies the exact text the client sent it (as opposed to the practical session example)
 */
+void run(){
+	while(true) {
+		const short bufsize = 1024;
+		char buf[bufsize];
+		std::cout << "< ";
+		std::cin.getline(buf, bufsize);
+		std::string line(buf);
+		lineQueue.push(line);
+	}
+}
 int main (int argc, char *argv[]) {
     if (argc < 3) {
         std::cerr << "Usage: " << argv[0] << " host port" << std::endl << std::endl;
@@ -28,15 +38,15 @@ int main (int argc, char *argv[]) {
 	//From here we will see the rest of the ehco client implementation:
 
     boost::mutex mutex;
-    Task task1(1, &mutex);
-    boost::thread th1(task1.run());
+   // Task task1(1, &mutex);
+    boost::thread th1(run);
     th1.join();
 
 
     while (!disconnect) {
 
-        if(!Task::lineQueue.empty()) {
-            std::string newLine = Task::lineQueue.front();
+        if(/*!Task::*/lineQueue.empty()) {
+            std::string newLine = /*Task::*/lineQueue.front();
             connectionHandler.sendLine(newLine);
             connectionHandler.keepListen = true;
             std::cout << "enter decode" << std::endl;
