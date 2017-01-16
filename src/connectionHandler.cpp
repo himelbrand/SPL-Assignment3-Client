@@ -97,9 +97,9 @@ bool ConnectionHandler::decode(){
             char blockNumberA[2];
             getBytes(blockNumberA, 2);
             short bN = bytesToShort(blockNumberA);
-            std::cout << "> ACK " + bN << std::endl;
+            std::cout << "> ACK " + std::to_string(bN) << std::endl;
             if (fs.is_open()) {
-                char *dataBytes;
+                char *dataBytes = nullptr;
                 try {
                     fs.readsome(dataBytes, 512);
                 } catch (int e) {
@@ -142,8 +142,7 @@ bool ConnectionHandler::decode(){
         case 5: {//Error
             char errorCode[2];
             getBytes(errorCode, 2);
-            std::cout << "> Error " + errorCode[1] << std::endl;
-            std:
+            std::cout << "> Error " + std::to_string(errorCode[1]) << std::endl;
             string errorMessage;
             keepListen = false;
             return getFrameAscii(errorMessage, '\0');
@@ -198,7 +197,7 @@ char*  ConnectionHandler::encodeInput(std::string &message){
     std::vector<std::string> words;
     boost::split(words, message, boost::is_space());
 	std::string command = words.at(0);
-    char* ans;
+    char* ans = nullptr;
 
     if(command=="RRQ"){
         if(words.size() != 2){
