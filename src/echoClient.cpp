@@ -5,7 +5,6 @@
 #include <Task.h>
 
 static bool disconnect = false;
-std::queue<std::string> lineQueue;
 
 /**
 * This code assumes that the server replies the exact text the client sent it (as opposed to the practical session example)
@@ -30,14 +29,14 @@ int main (int argc, char *argv[]) {
 
     boost::mutex mutex;
     Task task1(1, &mutex);
-    boost::thread th1(task1.run(lineQueue));
+    boost::thread th1(task1.run());
     th1.join();
 
 
     while (!disconnect) {
 
-        if(!lineQueue.empty()) {
-            std::string newLine = lineQueue.front();
+        if(!Task::lineQueue.empty()) {
+            std::string newLine = Task::lineQueue.front();
             connectionHandler.sendLine(newLine);
             connectionHandler.keepListen = true;
             std::cout << "enter decode" << std::endl;
@@ -89,8 +88,8 @@ int main (int argc, char *argv[]) {
 //                break;
 //            }
         }
-    }
     return 0;
-}
+    }
+
 
 

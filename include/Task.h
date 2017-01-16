@@ -9,8 +9,8 @@ private:
     boost::mutex * _mutex;
 public:
     Task (int id, boost::mutex* mutex) : _id(id), _mutex(mutex) {}
-
-    void run(std::queue<std::string> &lineQueue){
+    static std::queue<std::string> lineQueue;
+    void run(){
         while(true) {
             const short bufsize = 1024;
             char buf[bufsize];
