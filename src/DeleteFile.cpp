@@ -1,17 +1,4 @@
-#include "../../../../Library/Containers/com.apple.mail/Data/Library/Mail Downloads/EED0158E-6473-41BB-BBA3-BAE939304AA2/cpp/DeleteFile.h"
-
-namespace bgu
-{
-	namespace spl171
-	{
-		namespace net
-		{
-			namespace impl
-			{
-				namespace TFTP
-				{
-					namespace msg
-					{
+#include "DeleteFile.h"
 
 						DeleteFile::DeleteFile(const std::wstring &filename) : Message((short) 8)
 						{
@@ -23,9 +10,3 @@ namespace bgu
 						{
 							return filename;
 						}
-					}
-				}
-			}
-		}
-	}
-}

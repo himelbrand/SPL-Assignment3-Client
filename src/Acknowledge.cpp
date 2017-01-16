@@ -1,17 +1,4 @@
-#include "../../../../Library/Containers/com.apple.mail/Data/Library/Mail Downloads/EED0158E-6473-41BB-BBA3-BAE939304AA2/cpp/Acknowledge.h"
-
-namespace bgu
-{
-	namespace spl171
-	{
-		namespace net
-		{
-			namespace impl
-			{
-				namespace TFTP
-				{
-					namespace msg
-					{
+#include "Acknowledge.h"
 
 						Acknowledge::Acknowledge(short blockNum) : Message((short) 4)
 						{
@@ -23,9 +10,3 @@ namespace bgu
 						{
 							return blockNum;
 						}
-					}
-				}
-			}
-		}
-	}
-}

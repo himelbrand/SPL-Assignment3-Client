@@ -54,24 +54,37 @@ bool ConnectionHandler::decode(){
             getBytes(blockNumberD,2);
             char dataBytes[bytesToShort(packetSize)];
             getBytes(dataBytes, sizeof(dataBytes));
+			if(!fs.is_open()){
+				std::cout << dataBytes << end;
+				if (sizeof(dataBytes) < 512) {//TODO check databytes size , need to be 512 sometimes
 
-            fs.write(dataBytes, sizeof(dataBytes));
+				}
+			}else {
+				try {
+					fs.write(dataBytes, sizeof(dataBytes));
+				}catch(int e){
+					char errorMessage[4];
+					errorMessage[0]=0;
+					errorMessage[1]=5;
+					errorMessage[2]=0;
+					errorMessage[3]=2;
+					sendBytes(errorMessage, 4);
+					break;
+				}
+				if (sizeof(dataBytes) < 512) {//TODO check databytes size , need to be 512 sometimes
+					fileName = "";
+					fs.close();
+				}
+			}
+				char ackMessage[4];
+				ackMessage[0] = 0;
+				ackMessage[1] = 4;
+				ackMessage[2] = blockNumberD[0];
+				ackMessage[3] = blockNumberD[1];
 
+				sendBytes(ackMessage, 4);
 
-            if(sizeof(dataBytes) < 512){//TODO check databytes size , need to be 512 sometimes
-                fileName = "";
-                fs.close();
-            }
-
-            char ackMessage[4];
-            ackMessage[0] = 0;
-            ackMessage[1] = 4;
-            ackMessage[2] = blockNumberD[0];
-            ackMessage[3] = blockNumberD[1];
-
-            sendBytes(ackMessage,4);
-
-            break;
+			break;
         case 4://ACK
             char blockNumberA[2];
             getBytes(blockNumberA,2);
@@ -79,7 +92,19 @@ bool ConnectionHandler::decode(){
             std::cout << "> ACK " + bN << std::endl;
             if(fs.is_open()){
                 char* dataBytes;
-             fs.readsome(dataBytes,512);
+				try {
+					fs.readsome(dataBytes,512);
+				}catch(int e){
+					char errorMessage[4];
+					errorMessage[0]=0;
+					errorMessage[1]=5;
+					errorMessage[2]=0;
+					errorMessage[3]=2;
+					sendBytes(errorMessage, 4);
+					break;
+				}
+
+
                 char dataMessage[sizeof(dataBytes) + 6];
                 dataMessage[0] = 0;
                 dataMessage[1] = 3;

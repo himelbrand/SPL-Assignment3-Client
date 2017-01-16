@@ -1,10 +1,5 @@
-//
-// Created by Shahar Nussbaum on 15/01/2017.
-//
-
-#ifndef SPL_ASSIGNMENT3_CLIENT_TASK_H
-#define SPL_ASSIGNMENT3_CLIENT_TASK_H
-
+#ifndef TASK__
+#define TASK__
 #include <boost/thread.hpp>
 #include <queue>
 
@@ -27,4 +22,4 @@ public:
     }
 };
 
-#endif //SPL_ASSIGNMENT3_CLIENT_TASK_H
+#endif //TASK__

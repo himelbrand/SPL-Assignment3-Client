@@ -1,18 +1,5 @@
 #include "Error.h"
 
-namespace bgu
-{
-	namespace spl171
-	{
-		namespace net
-		{
-			namespace impl
-			{
-				namespace TFTP
-				{
-					namespace msg
-					{
-
 						Error::Error(short errorCode) : Message((short) 5)
 						{
 							//TODO: change error messages
@@ -56,9 +43,3 @@ namespace bgu
 						{
 							return errorMsg;
 						}
-					}
-				}
-			}
-		}
-	}
-}
