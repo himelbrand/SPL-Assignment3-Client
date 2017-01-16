@@ -1,5 +1,5 @@
-#pragma once
-
+#ifndef MESSAGE_ENCODER_DECODER__
+#define MESSAGE_ENCODER_DECODER__
 #include <string>
 #include <vector>
 

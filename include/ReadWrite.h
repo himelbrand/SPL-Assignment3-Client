@@ -1,4 +1,5 @@
-
+#ifndef READ_WRITE__
+#define READ_WRITE__
 #include "Message.h"
 #include <string>
 
@@ -12,3 +13,4 @@
 							virtual std::string getFilename();
 						};
 
+#endif

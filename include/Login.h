@@ -1,5 +1,5 @@
-#pragma once
-
+#ifndef LOGIN__
+#define LOGIN__
 #include "Message.h"
 #include <string>
 
@@ -11,3 +11,5 @@ public:
 	Login(const std::string &username);
 	virtual std::wstring getUsername();
 };
+
+#endif

@@ -1,3 +1,5 @@
+#ifndef ERROR__
+#define ERROR__
 #include "Message.h"
 #include <string>
 
@@ -13,3 +15,5 @@
 
 							virtual std::string getErrorMsg();
 						};
+
+#endif
