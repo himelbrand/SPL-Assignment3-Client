@@ -142,7 +142,7 @@ bool ConnectionHandler::decode(){
         case 5: {//Error
             char errorCode[2];
             getBytes(errorCode, 2);
-            std::cout << "> Error " + errorCode[1] << std::endl;
+            std::cout << "> Error " + std::to_string(errorCode[1]) << std::endl;
             string errorMessage;
             keepListen = false;
             return getFrameAscii(errorMessage, '\0');
