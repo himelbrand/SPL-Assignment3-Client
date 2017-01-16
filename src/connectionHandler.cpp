@@ -97,7 +97,7 @@ bool ConnectionHandler::decode(){
             char blockNumberA[2];
             getBytes(blockNumberA, 2);
             short bN = bytesToShort(blockNumberA);
-            std::cout << "> ACK " + bN << std::endl;
+            std::cout << "> ACK " + std::to_string(bN) << std::endl;
             if (fs.is_open()) {
                 char *dataBytes;
                 try {
