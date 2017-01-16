@@ -256,9 +256,15 @@ char*  ConnectionHandler::encodeInput(std::string &message){
 	}else if(command =="LOGRQ"){
         if(words.size() == 2){
 
-            char  *bytess = new char[123];
+            char  *bytess;
+            //
+            // delete[] bytess;
+             bytess=  new char[123];
+            char  *bytess1 = new char[44];
+
 
 std::cout << "bytes size is " << sizeof(bytess) << "  words length is  " << words.at(1).length()<< std::endl;
+std::cout << "bytes size is " << sizeof(bytess1) << "  words length is  " << words.at(1).length()<< std::endl;
             bytess[0] = 0;
             bytess[1] = 7;
             bytess[122] = 7;
