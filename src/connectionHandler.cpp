@@ -61,7 +61,7 @@ bool ConnectionHandler::decode(){
                 fileName = "";
                 fs.close();
             }
-
+            
             char ackMessage[4];
             ackMessage[0] = 0;
             ackMessage[1] = 4;
