@@ -30,7 +30,7 @@ public:
 
 
      static bool keepListen;
-
+        static bool disconnect;
 
 
     char* encodeInput(std::string & message);

@@ -4,7 +4,6 @@
 #include <boost/thread.hpp>
 //#include <Task.h>
 
-static bool disconnect = false;
 std::queue<std::string> lineQueue;
 /**
 * This code assumes that the server replies the exact text the client sent it (as opposed to the practical session example)
@@ -33,7 +32,6 @@ int main (int argc, char *argv[]) {
     if (!connectionHandler.connect()) {
         std::cerr << "Cannot connect to " << host << ":" << port << std::endl;
         std::cerr << "Cannot connect to " << port << ":" << port << std::endl;
-        std::cerr << "Cannot connect to " << host << ":" << port << std::endl;
         return 1;
     }
 	
@@ -44,7 +42,7 @@ int main (int argc, char *argv[]) {
     boost::thread th1(run);
 
 
-    while (!disconnect) {
+    while (!ConnectionHandler::disconnect) {
         if(/*!Task::*/!lineQueue.empty()) {
             std::string newLine = /*Task::*/lineQueue.front();
             lineQueue.pop();
@@ -52,9 +50,9 @@ int main (int argc, char *argv[]) {
             connectionHandler.keepListen = connectionHandler.sendLine(newLine);
 
             while(connectionHandler.keepListen){
-                std::cout << "***************enter decode" << std::endl;
+               // std::cout << "**********************************************************enter decode" << std::endl;
                 connectionHandler.decode();
-                std::cout << "*****************exit decode" << std::endl;
+               // std::cout << "**********************************************************exit decode" << std::endl;
             }
 
         }

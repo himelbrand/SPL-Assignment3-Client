@@ -11,8 +11,10 @@ using std::string;
 
 
 bool ConnectionHandler::keepListen = false;
+bool diconnectSend = false;
+bool ConnectionHandler::disconnect = false;
 
-
+int count =0;
 ConnectionHandler::ConnectionHandler(string host, short port): host_(host), port_(port), io_service_(), socket_(io_service_),fs(),fileName(){}
     
 ConnectionHandler::~ConnectionHandler() {
@@ -44,12 +46,12 @@ bool ConnectionHandler::getLine(std::string& line) {
 
 
 bool ConnectionHandler::decode(){
-
     char op[2];
 
     if(!getBytes(op,2)){
         return false;
     }
+    std::cout << "start decode  -  opcode - " << std::to_string(op[1]) << std::endl;
     switch(op[1]) {
         case 3: // DATA
         {
@@ -58,16 +60,30 @@ bool ConnectionHandler::decode(){
             getBytes(packetSize, 2);
             getBytes(blockNumberD, 2);
             char dataBytes[bytesToShort(packetSize)];
-            getBytes(dataBytes, sizeof(dataBytes));
+            getBytes(dataBytes, (unsigned int)bytesToShort(packetSize));
             if (!fs.is_open()) {
-                std::cout << dataBytes;
-
-                if (sizeof(dataBytes) < 512) {//TODO check databytes size , need to be 512 sometimes
+                bool newWord = true;
+                for(char c:dataBytes){
+                    if(c == 0) {
+                        std::cout << "" << std::endl;
+                        newWord = true;
+                    }
+                    else {
+                        if(newWord) {
+                            std::cout << "> ";
+                            newWord = false;
+                        }
+                        std::cout << c;
+                    }
+                }
+                std::cout << "< ";
+                if ((unsigned int)bytesToShort(packetSize) < 512) {//TODO check databytes size , need to be 512 sometimes
                     keepListen = false;
                 }
             } else {
                 try {
-                    fs.write(dataBytes, sizeof(dataBytes));
+                    std::cout << "data bytes size " << strlen(&dataBytes[0]) << "  " << bytesToShort(packetSize) << std::endl;
+                    fs.write(dataBytes, bytesToShort(packetSize));
                 } catch (int e) {
                     char errorMessage[4];
                     errorMessage[0] = 0;
@@ -77,8 +93,9 @@ bool ConnectionHandler::decode(){
                     sendBytes(errorMessage, 4);
                     break;
                 }
-                if (sizeof(dataBytes) < 512) {//TODO check databytes size , need to be 512 sometimes
+                    if (bytesToShort(packetSize) < 512) {//TODO check databytes size , need to be 512 sometimes
                     fileName = "";
+                        std::cout << "closing fs!" <<std::endl;
                     fs.close();
                     keepListen = false;
                 }
@@ -95,14 +112,31 @@ bool ConnectionHandler::decode(){
     }
         case 4://ACK
         {
+            if(diconnectSend){
+                disconnect=true;
+                std::cout <<"disconeeeeect" << std::endl;
+            }
             char blockNumberA[2];
+            char packetSize[2];
             getBytes(blockNumberA, 2);
             short bN = bytesToShort(blockNumberA);
             std::cout << "> ACK " + std::to_string(bN) << std::endl;
             if (fs.is_open()) {
-                char *dataBytes= nullptr;
+
+                char dataBytesTemp[512];
+                     char c;
+
+                int dataSize =0;
                 try {
-                    fs.readsome(dataBytes, 512);
+                    while(dataSize < 512 && fs.get(c))
+                    {
+                        std::cout  << " len : " << dataSize + 6  << " byte :  " << (char)c << std::endl;
+                        dataBytesTemp[dataSize] = c;
+                        dataSize++;
+
+                    }
+
+
                 } catch (int e) {
                     char errorMessage[4];
                     errorMessage[0] = 0;
@@ -114,29 +148,40 @@ bool ConnectionHandler::decode(){
                 }
 
 
-                char dataMessage[sizeof(dataBytes) + 6];
+
+
+
+                char dataMessage[dataSize + 6];
                 dataMessage[0] = 0;
                 dataMessage[1] = 3;
                 bN++;
+                shortToBytes((short)dataSize, packetSize);
+
+                dataMessage[2] = packetSize[0];
+                dataMessage[3] = packetSize[1];
 
                 shortToBytes(bN, blockNumberA);
-                dataMessage[2] = blockNumberA[0];
-                dataMessage[3] = blockNumberA[1];
-
-                shortToBytes(sizeof(dataBytes), blockNumberA);
 
                 dataMessage[4] = blockNumberA[0];
                 dataMessage[5] = blockNumberA[1];
 
-                std::strcat(dataMessage, dataBytes);
-                sendBytes(dataMessage, sizeof(dataMessage));
-                if (sizeof(dataBytes) < 512) {
+
+                for(int j=6; j<dataSize+6;j++){
+                    dataMessage[j] = dataBytesTemp[j-6];
+                }
+
+              // std::cout << "> data  size " << dataSize     << std::endl;
+
+                sendBytes(dataMessage, dataSize +6);
+
+                if (dataSize < 512) {
+                    std::cout << "fs close!" <<std::endl;
                     fs.close();
                     keepListen = false;
                 }
             } else {
+                std::cout << "fs is close motherfucke" << std::endl;
                 keepListen = false;
-               // std::cout << " fs close " << std::endl;
             }
     }
             break;
@@ -146,6 +191,10 @@ bool ConnectionHandler::decode(){
             std::cout << "> Error " + std::to_string(errorCode[1]) << std::endl;
             string errorMessage;
             keepListen = false;
+
+            fs.close();
+            fileName = "";
+
             return getFrameAscii(errorMessage, '\0');
         }
         case 9: {//Bcast
@@ -178,9 +227,10 @@ bool ConnectionHandler::getBytes(char bytes[], unsigned int bytesToRead) {
 }
 
 bool ConnectionHandler::sendBytes(const char bytes[], int bytesToWrite) {
+   // std::cout <<"opcode : " << std::to_string(bytes[1]) << std::endl;
     int tmp = 0;
- //   std::cout << "byte to write: " << bytesToWrite << std::endl;
- //   std::cout << "size of bytes: " << sizeof(bytes) << std::endl;
+   //std::cout << "byte to write: " << bytesToWrite << std::endl;
+
 	boost::system::error_code error;
     try {
         while (!error && bytesToWrite > tmp ) {
@@ -202,9 +252,10 @@ char*  ConnectionHandler::encodeInput(std::string &message){
     boost::split(words, message, boost::is_space());
 	std::string command = words.at(0);
 
+    std::cout << "command : " +command << std::endl;
     if(command=="RRQ"){
-        if(words.size() != 2){
-            char  *bytes = new char [words.at(1).length() +3];
+        if(words.size() == 2){
+            char  * bytes = new char [words.at(1).length() +3];
 
             bytes[0] = 0;//one byte
             bytes[1] = 1;//another byte
@@ -220,18 +271,19 @@ char*  ConnectionHandler::encodeInput(std::string &message){
                std::cout << "The file is already exist!!" << std::endl;
                return nullptr;
            }else{
+               fs.open(words.at(1),std::ios::out);
                fileName = words.at(1);
            }
             return bytes;
         }else{
-            std::cout << "please enter username" << std::endl;
+            std::cout << "please enter one file name" << std::endl;
         }
 
 
 
 
 	}else if(command=="WRQ"){
-        if(words.size() != 2){
+        if(words.size() == 2){
             char  * bytes = new char[words.at(1).length() +3];
 
             bytes[0] = 0;//one byte
@@ -243,38 +295,41 @@ char*  ConnectionHandler::encodeInput(std::string &message){
             }
             bytes[i] = '\0' ;
 
-            fs.open(words.at(1));
+
+
+            fs.open(words.at(1),std::ios::in | std::ios::binary);
+
+
+
             if(!fs.good()){
                 std::cout << "File not exist!!" << std::endl;
                 return nullptr;
             }
+            std::cout << " fs is inputstream open : " << fs.is_open() <<   fs.tellg()   <<std::endl;
 
             return bytes;
         }else{
-            std::cout << "please enter username" << std::endl;
+            std::cout << "please add one file" << std::endl;
         }
 	}else if(command =="LOGRQ"){
         if(words.size() == 2){
 
-            char  *bytess;
-            //
-            // delete[] bytess;
-             bytess=  new char[123];
-            char  *bytess1 = new char[44];
+            char  * bytess = new char[9];
 
 
-std::cout << "bytes size is " << sizeof(bytess) << "  words length is  " << words.at(1).length()<< std::endl;
-std::cout << "bytes size is " << sizeof(bytess1) << "  words length is  " << words.at(1).length()<< std::endl;
             bytess[0] = 0;
             bytess[1] = 7;
-            bytess[122] = 7;
-            bytess[12] = 7;
 
-            std::cout << std::to_string(bytess[0]) << std::endl;
-            std::cout << std::to_string(bytess[1]) << std::endl;
+//            std::cout << std::to_string(bytess[0]) << std::endl;
+//            std::cout << std::to_string(bytess[1]) << std::endl;
+//
+//
+//            std::cout << strlen(&bytess[1]) << std::endl;
+//            std::cout << sizeof(bytess) << std::endl;
+//            std::cout << "$$$$$$$$$$$$$$$$$$$$" << std::endl;
 
 
-            std::cout << "\"!!!!!!!!!!!!!!!!!!!!!!!!!\"" << std::endl;
+//            std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
 
            int i=2;
             for(char c:words.at(1)){
@@ -282,15 +337,16 @@ std::cout << "bytes size is " << sizeof(bytess1) << "  words length is  " << wor
                 i++;
             }
             bytess[i] = '\0';
-//
-            std::cout << "$$$$$$$$$$$$$$$$$$$$" << sizeof(bytess) << "---" << i<< std::endl;
+
+
+//            std::cout << strlen(&bytess[1]) << std::endl;
+//            std::cout << "$$$$$$$$$$$$$$$$$$$$" << std::endl;
 
             return bytess;
         }else{
             std::cout << "please enter username" << std::endl;
         }
 	}else if(command=="DIRQ"){
-        std::cout << "V5" << std::endl;
         char  * bytes = new char[2];
         bytes[0] = 0;
         bytes[1] = 6;
@@ -299,7 +355,7 @@ std::cout << "bytes size is " << sizeof(bytess1) << "  words length is  " << wor
 
 	}else if(command=="DELRQ"){
         std::cout << "V3" << std::endl;
-        if(words.size() != 2){
+        if(words.size() == 2){
             char  * bytes = new char[words.at(1).length() +3];
 
             bytes[0] = 0;//one byte
@@ -314,10 +370,10 @@ std::cout << "bytes size is " << sizeof(bytess1) << "  words length is  " << wor
         }
 
 	}else if(command=="DISC"){
-        std::cout << "V2" << std::endl;
         char * bytes = new char[2];
         bytes[0] = 0;
         bytes[1] = 10;
+        diconnectSend = true;
         return bytes;
 	}
     return nullptr;
@@ -338,9 +394,24 @@ bool ConnectionHandler::sendLine(std::string& line) {
     if(!line.empty()) {
         char  * encodeMessage = encodeInput(line);
 
-        std::cout <<"send lind encodeMessage size " << sizeof(encodeMessage) << std::endl;
+
         if(encodeMessage != nullptr){
-            bool send =  sendBytes(encodeMessage, sizeof(encodeMessage));
+            unsigned long sendSize = strlen(&encodeMessage[1]) + 1;
+            switch(encodeMessage[1]){
+                case 1:
+                case 2:
+                case 9:
+                case 7:
+                case 5:
+                    sendSize ++;
+                    break;
+                default:
+                    break;
+
+            }
+
+    //        std::cout << "send bytes size is " << sendSize << std::endl;
+            bool send =  sendBytes(encodeMessage, sendSize);
             delete[] encodeMessage;
             return send;
         }else{
