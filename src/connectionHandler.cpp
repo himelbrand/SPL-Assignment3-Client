@@ -51,7 +51,7 @@ bool ConnectionHandler::decode(){
     if(!getBytes(op,2)){
         return false;
     }
-    std::cout << "start decode  -  opcode - " << std::to_string(op[1]) << std::endl;
+ //  std::cout << "start decode  -  opcode - " << std::to_string(op[1]) << std::endl;
     switch(op[1]) {
         case 3: // DATA
         {
@@ -82,7 +82,7 @@ bool ConnectionHandler::decode(){
                 }
             } else {
                 try {
-                    std::cout << "data bytes size " << strlen(&dataBytes[0]) << "  " << bytesToShort(packetSize) << std::endl;
+            //        std::cout << "data bytes size " << strlen(&dataBytes[0]) << "  " << bytesToShort(packetSize) << std::endl;
                     fs.write(dataBytes, bytesToShort(packetSize));
                 } catch (int e) {
                     char errorMessage[4];
@@ -130,7 +130,7 @@ bool ConnectionHandler::decode(){
                 try {
                     while(dataSize < 512 && fs.get(c))
                     {
-                        std::cout  << " len : " << dataSize + 6  << " byte :  " << (char)c << std::endl;
+                        //std::cout  << " len : " << dataSize + 6  << " byte :  " << (char)c << std::endl;
                         dataBytesTemp[dataSize] = c;
                         dataSize++;
 
@@ -177,11 +177,11 @@ bool ConnectionHandler::decode(){
                 if (dataSize < 512) {
                     std::cout << "fs close!" <<std::endl;
                     fs.close();
-                    keepListen = false;
+                    //keepListen = false; //TODO wait fot bcast
                 }
             } else {
                 std::cout << "fs is close motherfucke" << std::endl;
-                keepListen = false;
+               // keepListen = false;
             }
     }
             break;
@@ -198,6 +198,18 @@ bool ConnectionHandler::decode(){
             return getFrameAscii(errorMessage, '\0');
         }
         case 9: {//Bcast
+            char added[1];
+            getBytes(added, 1);
+            string state;
+            if(added[0] == 0)
+            {
+                state = "del";
+            }else{
+                state = "add";
+            }
+            string fileADName;
+            getFrameAscii(fileADName, '\0');
+            std::cout << "> BCAST " << state << " " << fileADName << std::endl;
             keepListen = false;
 			break;
         }
@@ -303,6 +315,7 @@ char*  ConnectionHandler::encodeInput(std::string &message){
 
             if(!fs.good()){
                 std::cout << "File not exist!!" << std::endl;
+                fs.close();
                 return nullptr;
             }
             std::cout << " fs is inputstream open : " << fs.is_open() <<   fs.tellg()   <<std::endl;
