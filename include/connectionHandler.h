@@ -4,7 +4,7 @@
 #include <string>
 #include <iostream>
 #include <boost/asio.hpp>
-
+#include <boost/thread.hpp>
 #include <fstream>
 
 using namespace std;
@@ -17,6 +17,12 @@ public:
         delete[] this->_bytesArray;
         this->_bytesArraySize = 0;
     }
+	byteObj& operator=(const byteObj &other){
+		this->_bytesArray = other._bytesArray;
+		this->_bytesArraySize = other._bytesArraySize;
+		return *this;
+	}
+	byteObj(const byteObj &other):_bytesArraySize(other._bytesArraySize),_bytesArray(other._bytesArray){}
     byteObj () : _bytesArraySize(0), _bytesArray(nullptr) {}
 
     int _bytesArraySize;
@@ -46,7 +52,7 @@ public:
 
 
     static bool disconnect;
-    static std::mutex mtx;
+    static boost::mutex mtx;
 
 
     byteObj encodeInput(std::string & message);

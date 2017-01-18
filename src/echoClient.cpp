@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <connectionHandler.h>
 #include <queue>
-#include <boost/thread.hpp>
+
 //#include <Task.h>
 
 using namespace std;

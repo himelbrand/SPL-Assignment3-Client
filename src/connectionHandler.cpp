@@ -11,13 +11,13 @@ using std::cerr;
 using std::endl;
 using std::string;
 
-std::mutex ConnectionHandler::mtx;
+boost::mutex ConnectionHandler::mtx;
 bool ConnectionHandler::disconnect = false;
 bool diconnectSend = false;
 
 
 int count =0;
-ConnectionHandler::ConnectionHandler(string host, short port): host_(host), port_(port), io_service_(), socket_(io_service_),fs(),fileName(){}
+ConnectionHandler::ConnectionHandler(string host, short port): host_(host), port_(port), io_service_(), socket_(io_service_),fs(),fsMode(),fileName(){}
     
 ConnectionHandler::~ConnectionHandler() {
     close();
@@ -54,7 +54,7 @@ bool ConnectionHandler::decode(){
         return false;
     }
 
-    mtx.try_lock(); //LOCK mtx start decoding
+    ConnectionHandler::mtx.try_lock(); //LOCK mtx start decoding
  //  std::cout << "start decode  -  opcode - " << std::to_string(op[1]) << std::endl;
     switch(op[1]) {
         case 3: // DATA DECODE
@@ -92,7 +92,7 @@ bool ConnectionHandler::decode(){
                     errorMessage[2] = 0;
                     errorMessage[3] = 2;
                     sendBytes(errorMessage, 4);
-                    mtx.unlock(); //UNLOCK MTX
+                    ConnectionHandler::mtx.unlock(); //UNLOCK MTX
                     break;
 
                 }
@@ -112,7 +112,7 @@ bool ConnectionHandler::decode(){
 
             sendBytes(ackMessage, 4);
             if((unsigned int)bytesToShort(packetSize) < 512){
-                mtx.unlock(); //UNLOCK MTX
+                ConnectionHandler::mtx.unlock(); //UNLOCK MTX
             }
 
             break;
@@ -122,7 +122,7 @@ bool ConnectionHandler::decode(){
             if(diconnectSend){
                 disconnect=true;
                 std::cout <<"disconeeeeect" << std::endl;
-                mtx.unlock(); //UNLOCK MTX
+                ConnectionHandler::mtx.unlock(); //UNLOCK MTX
             }
             char blockNumberA[2];
             char packetSize[2];
@@ -185,10 +185,10 @@ bool ConnectionHandler::decode(){
                 if (dataSize < 512) {
                  //   std::cout << "fs close!" <<std::endl;
                     fs.close();
-                    mtx.unlock(); //UNLOCK MTX
+                    ConnectionHandler::mtx.unlock(); //UNLOCK MTX
                 }
             } else {
-                mtx.unlock(); //UNLOCK MTX
+                ConnectionHandler::mtx.unlock(); //UNLOCK MTX
             }
     }
             break;
@@ -202,7 +202,7 @@ bool ConnectionHandler::decode(){
                 std::remove(fileName.c_str());
             fs.close();
             fileName = "";
-            mtx.unlock(); //UNLOCK MTX
+            ConnectionHandler::mtx.unlock(); //UNLOCK MTX
             return getFrameAscii(errorMessage, '\0');
 
         }
@@ -220,11 +220,11 @@ bool ConnectionHandler::decode(){
             getFrameAscii(fileADName, '\0');
             std::cout << "> BCAST " << state << " " << fileADName << std::endl;
 
-            mtx.unlock(); //UNLOCK MTX
+            ConnectionHandler::mtx.unlock(); //UNLOCK MTX
 			break;
         }
         default: {
-            mtx.unlock(); //UNLOCK MTX
+            ConnectionHandler::mtx.unlock(); //UNLOCK MTX
             return false;
             break;
         }
