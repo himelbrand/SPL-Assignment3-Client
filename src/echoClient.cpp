@@ -4,13 +4,14 @@
 #include <boost/thread.hpp>
 //#include <Task.h>
 
+using namespace std;
 std::queue<std::string> lineQueue;
 /**
 * This code assumes that the server replies the exact text the client sent it (as opposed to the practical session example)
 */
+std::mutex mtx;
 
-
-    void run(ConnectionHandler *connectionhandler) {
+void run(ConnectionHandler *connectionhandler) {
     while (true) {
         const short bufsize = 1024;
         char buf[bufsize];
@@ -18,8 +19,9 @@ std::queue<std::string> lineQueue;
         std::cin.getline(buf, bufsize);
         std::string line(buf);
         lineQueue.push(line);
-
+        mtx.lock();
         connectionhandler->sendLine(line);
+        mtx.unlock();
     }
 }
 
@@ -41,11 +43,10 @@ int main (int argc, char *argv[]) {
         return 1;
     }
 
-    boost::mutex mutex;
     boost::thread th1(boost::bind(run, &connectionHandler));
 
     while (!ConnectionHandler::disconnect) {
-            connectionHandler.decode();
+            connectionHandler.decode(&mtx);
         }
     return 0;
     }

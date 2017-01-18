@@ -1,8 +1,10 @@
 #include <connectionHandler.h>
 #include <boost/algorithm/string.hpp>
+#include <stdio.h>
 
 using boost::asio::ip::tcp;
 
+using namespace std;
 using std::cin;
 using std::cout;
 using std::cerr;
@@ -45,15 +47,17 @@ bool ConnectionHandler::getLine(std::string& line) {
 }
 
 
-bool ConnectionHandler::decode(){
+bool ConnectionHandler::decode(mutex * mtx){
     char op[2];
 
     if(!getBytes(op,2)){
         return false;
     }
+
+    mtx->try_lock(); //LOCK mtx start decoding
  //  std::cout << "start decode  -  opcode - " << std::to_string(op[1]) << std::endl;
     switch(op[1]) {
-        case 3: // DATA
+        case 3: // DATA DECODE
         {
             char blockNumberD[2];
             char packetSize[2];
@@ -61,7 +65,7 @@ bool ConnectionHandler::decode(){
             getBytes(blockNumberD, 2);
             char dataBytes[bytesToShort(packetSize)];
             getBytes(dataBytes, (unsigned int)bytesToShort(packetSize));
-            if (!fs.is_open()) {
+            if (!fs.is_open()) { //DIRQ DECODE
                 bool newWord = true;
                 for(char c:dataBytes){
                     if(c == 0) {
@@ -76,11 +80,11 @@ bool ConnectionHandler::decode(){
                         std::cout << c;
                     }
                 }
-                std::cout << "< ";
+              //  std::cout << "< ";
                 if ((unsigned int)bytesToShort(packetSize) < 512) {//TODO check databytes size , need to be 512 sometimes
                     keepListen = false;
                 }
-            } else {
+            } else { //RRQ DECODE
                 try {
             //        std::cout << "data bytes size " << strlen(&dataBytes[0]) << "  " << bytesToShort(packetSize) << std::endl;
                     fs.write(dataBytes, bytesToShort(packetSize));
@@ -91,13 +95,16 @@ bool ConnectionHandler::decode(){
                     errorMessage[2] = 0;
                     errorMessage[3] = 2;
                     sendBytes(errorMessage, 4);
+                    mtx->unlock(); //UNLOCK MTX
                     break;
+
                 }
                     if (bytesToShort(packetSize) < 512) {//TODO check databytes size , need to be 512 sometimes
                     fileName = "";
                         std::cout << "closing fs!" <<std::endl;
                     fs.close();
                     keepListen = false;
+
                 }
             }
             char ackMessage[4];
@@ -107,21 +114,25 @@ bool ConnectionHandler::decode(){
             ackMessage[3] = blockNumberD[1];
 
             sendBytes(ackMessage, 4);
+            if((unsigned int)bytesToShort(packetSize) < 512){
+                mtx->unlock(); //UNLOCK MTX
+            }
 
             break;
     }
-        case 4://ACK
+        case 4://ACK DECODE
         {
             if(diconnectSend){
                 disconnect=true;
                 std::cout <<"disconeeeeect" << std::endl;
+                mtx->unlock(); //UNLOCK MTX
             }
             char blockNumberA[2];
             char packetSize[2];
             getBytes(blockNumberA, 2);
             short bN = bytesToShort(blockNumberA);
             std::cout << "> ACK " + std::to_string(bN) << std::endl;
-            if (fs.is_open()) {
+            if (fs.is_open()) { //WRQ DECODE
 
                 char dataBytesTemp[512];
                      char c;
@@ -173,29 +184,31 @@ bool ConnectionHandler::decode(){
               // std::cout << "> data  size " << dataSize     << std::endl;
 
                 sendBytes(dataMessage, dataSize +6);
-
+                cout << "send DATA " << endl;
                 if (dataSize < 512) {
-                    std::cout << "fs close!" <<std::endl;
+                 //   std::cout << "fs close!" <<std::endl;
                     fs.close();
-                    //keepListen = false; //TODO wait fot bcast
+                    mtx->unlock(); //UNLOCK MTX
                 }
             } else {
-                std::cout << "fs is close motherfucke" << std::endl;
-               // keepListen = false;
+                mtx->unlock(); //UNLOCK MTX
             }
     }
             break;
-        case 5: {//Error
+        case 5: {//ERROR DOCODE
             char errorCode[2];
             getBytes(errorCode, 2);
             std::cout << "> Error " + std::to_string(errorCode[1]) << std::endl;
             string errorMessage;
             keepListen = false;
 
+            if(fsMode == 'R') //Delete the local file
+                std::remove(fileName.c_str());
             fs.close();
             fileName = "";
-
+            mtx->unlock(); //UNLOCK MTX
             return getFrameAscii(errorMessage, '\0');
+
         }
         case 9: {//Bcast
             char added[1];
@@ -211,10 +224,12 @@ bool ConnectionHandler::decode(){
             getFrameAscii(fileADName, '\0');
             std::cout << "> BCAST " << state << " " << fileADName << std::endl;
             keepListen = false;
+            mtx->unlock(); //UNLOCK MTX
 			break;
         }
         default: {
             keepListen = false;//TODO: check if needed
+            mtx->unlock(); //UNLOCK MTX
             return false;
             break;
         }
@@ -232,13 +247,18 @@ bool ConnectionHandler::getBytes(char bytes[], unsigned int bytesToRead) {
 		if(error)
 			throw boost::system::system_error(error);
     } catch (std::exception& e) {
-        std::cerr << "recv failed (Error: " << e.what() << ')' << std::endl;
+        std::cerr << "Not connected."<< std::endl;
         return false;
     }
     return true;
 }
 
-bool ConnectionHandler::sendBytes(const char bytes[], int bytesToWrite) {
+bool ConnectionHandler::sendBytes(const  char bytes[], int bytesToWrite) {
+
+for(int i =0 ; i< bytesToWrite;i++){
+    cout <<"extbyte: "<< to_string(bytes[i]) <<endl;
+    cout <<"len: "<< i <<endl;
+}
    // std::cout <<"opcode : " << std::to_string(bytes[1]) << std::endl;
     int tmp = 0;
    //std::cout << "byte to write: " << bytesToWrite << std::endl;
@@ -251,7 +271,7 @@ bool ConnectionHandler::sendBytes(const char bytes[], int bytesToWrite) {
 		if(error)
 			throw boost::system::system_error(error);
     } catch (std::exception& e) {
-        std::cerr << "recv failed (Error: " << e.what() << ')' << std::endl;
+        std::cerr << "Not connected.."<< std::endl;
         return false;
     }
     return true;
@@ -259,13 +279,13 @@ bool ConnectionHandler::sendBytes(const char bytes[], int bytesToWrite) {
  
 
 
-char*  ConnectionHandler::encodeInput(std::string &message){
+byteObj ConnectionHandler::encodeInput(std::string &message){
     std::vector<std::string> words;
     boost::split(words, message, boost::is_space());
 	std::string command = words.at(0);
 
-    std::cout << "command : " +command << std::endl;
-    if(command=="RRQ"){
+  //  std::cout << "command : " +command << std::endl;
+    if(command=="RRQ"){ //READ ENCODE
         if(words.size() == 2){
             char  * bytes = new char [words.at(1).length() +3];
 
@@ -281,12 +301,13 @@ char*  ConnectionHandler::encodeInput(std::string &message){
             fs.open(words.at(1));
            if(fs){
                std::cout << "The file is already exist!!" << std::endl;
-               return nullptr;
+               return byteObj();
            }else{
                fs.open(words.at(1),std::ios::out);
+               fsMode = 'R';
                fileName = words.at(1);
            }
-            return bytes;
+            return byteObj(i +1,bytes);
         }else{
             std::cout << "please enter one file name" << std::endl;
         }
@@ -316,22 +337,22 @@ char*  ConnectionHandler::encodeInput(std::string &message){
             if(!fs.good()){
                 std::cout << "File not exist!!" << std::endl;
                 fs.close();
-                return nullptr;
+                return byteObj();
             }
-            std::cout << " fs is inputstream open : " << fs.is_open() <<   fs.tellg()   <<std::endl;
-
-            return bytes;
+           // std::cout << " fs is inputstream open : " << fs.is_open() <<   fs.tellg()   <<std::endl;
+            return byteObj(i + 1,bytes);
+           // return bytes;
         }else{
             std::cout << "please add one file" << std::endl;
         }
 	}else if(command =="LOGRQ"){
         if(words.size() == 2){
 
-            char  * bytess = new char[9];
+            char  * bytes = new char[9];
 
 
-            bytess[0] = 0;
-            bytess[1] = 7;
+            bytes[0] = 0;
+            bytes[1] = 7;
 
 //            std::cout << std::to_string(bytess[0]) << std::endl;
 //            std::cout << std::to_string(bytess[1]) << std::endl;
@@ -346,16 +367,16 @@ char*  ConnectionHandler::encodeInput(std::string &message){
 
            int i=2;
             for(char c:words.at(1)){
-                bytess[i] = c;
+                bytes[i] = c;
                 i++;
             }
-            bytess[i] = '\0';
+            bytes[i] = '\0';
 
 
 //            std::cout << strlen(&bytess[1]) << std::endl;
 //            std::cout << "$$$$$$$$$$$$$$$$$$$$" << std::endl;
-
-            return bytess;
+            return byteObj(i + 1,bytes);
+          //  return bytess;
         }else{
             std::cout << "please enter username" << std::endl;
         }
@@ -364,7 +385,8 @@ char*  ConnectionHandler::encodeInput(std::string &message){
         bytes[0] = 0;
         bytes[1] = 6;
 
-        return bytes;
+        return byteObj(2,bytes);
+       // return bytes;
 
 	}else if(command=="DELRQ"){
         std::cout << "V3" << std::endl;
@@ -379,7 +401,7 @@ char*  ConnectionHandler::encodeInput(std::string &message){
                 i++;
             }
             bytes[i] = '\0' ;
-            return bytes;
+            return byteObj(i + 1,bytes);
         }
 
 	}else if(command=="DISC"){
@@ -387,16 +409,9 @@ char*  ConnectionHandler::encodeInput(std::string &message){
         bytes[0] = 0;
         bytes[1] = 10;
         diconnectSend = true;
-        return bytes;
+        return byteObj(2,bytes);
 	}
-    return nullptr;
-//    std::cout << "@@@@@@@@@@@@@@@@@@@@@@@" << std::endl;
-//
-//    std::cout << ans[0] << std::endl;
-//    std::cout << ans[1] << std::endl;
-//
-//    std::cout << "@@@@@@@@@@@@@@@@@@@@@@@" << std::endl;
-
+     return byteObj();
 
 }
 
@@ -405,27 +420,15 @@ char*  ConnectionHandler::encodeInput(std::string &message){
 
 bool ConnectionHandler::sendLine(std::string& line) {
     if(!line.empty()) {
-        char  * encodeMessage = encodeInput(line);
+        byteObj encodeMessage = encodeInput(line);
 
 
-        if(encodeMessage != nullptr){
-            unsigned long sendSize = strlen(&encodeMessage[1]) + 1;
-            switch(encodeMessage[1]){
-                case 1:
-                case 2:
-                case 9:
-                case 7:
-                case 5:
-                    sendSize ++;
-                    break;
-                default:
-                    break;
+        if(encodeMessage._bytesArray != nullptr){
 
-            }
 
-    //        std::cout << "send bytes size is " << sendSize << std::endl;
-            bool send =  sendBytes(encodeMessage, sendSize);
-            delete[] encodeMessage;
+            std::cout << "send bytes size is " << encodeMessage._bytesArray[0] << std::endl;
+            bool send =  sendBytes(encodeMessage._bytesArray, encodeMessage._bytesArraySize);
+
             return send;
         }else{
             std::cout << "*************not valid command" <<  std::endl;
@@ -447,7 +450,7 @@ bool ConnectionHandler::getFrameAscii(std::string& frame, char delimiter) {
             frame.append(1, ch);
         }while (delimiter != ch);
     } catch (std::exception& e) {
-        std::cerr << "recv failed (Error: " << e.what() << ')' << std::endl;
+        std::cerr << "Not connected..."<< std::endl;
         return false;
     }
     return true;
@@ -479,3 +482,5 @@ void ConnectionHandler::close() {
         result += (short)(bytesArr[1] & 0xff);
         return result;
     }
+
+

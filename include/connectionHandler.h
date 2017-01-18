@@ -6,7 +6,20 @@
 #include <boost/asio.hpp>
 
 #include <fstream>
+
+using namespace std;
 using boost::asio::ip::tcp;
+class byteObj{
+public:
+    byteObj (int bytesArraySize, char * bytesArray) : _bytesArraySize(bytesArraySize), _bytesArray(bytesArray) {}
+    ~byteObj (){
+        delete[] this->_bytesArray;
+        this->_bytesArraySize = 0;
+    }
+    byteObj () : _bytesArraySize(0), _bytesArray(nullptr) {}
+    int _bytesArraySize;
+    char * _bytesArray;
+};
 
 class ConnectionHandler {
 private:
@@ -16,6 +29,7 @@ private:
 	tcp::socket socket_;
 
     std::fstream fs;
+    char fsMode;
     std::string fileName;
 
     short bytesToShort(char* bytesArr);
@@ -33,8 +47,8 @@ public:
         static bool disconnect;
 
 
-    char* encodeInput(std::string & message);
-    bool decode();
+    byteObj encodeInput(std::string & message);
+    bool decode(mutex *mtx);
     // Connect to the remote machine
     bool connect();
  
@@ -66,5 +80,8 @@ public:
     void close();
  
 }; //class ConnectionHandler
- 
+
+
+
+
 #endif
