@@ -45,12 +45,12 @@ public:
     virtual ~ConnectionHandler();
 
 
-     static bool keepListen;
-        static bool disconnect;
+    static bool disconnect;
+    static std::mutex mtx;
 
 
     byteObj encodeInput(std::string & message);
-    bool decode(mutex *mtx);
+    bool decode();
     // Connect to the remote machine
     bool connect();
 

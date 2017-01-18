@@ -11,10 +11,10 @@ using std::cerr;
 using std::endl;
 using std::string;
 
-
-bool ConnectionHandler::keepListen = false;
-bool diconnectSend = false;
+std::mutex ConnectionHandler::mtx;
 bool ConnectionHandler::disconnect = false;
+bool diconnectSend = false;
+
 
 int count =0;
 ConnectionHandler::ConnectionHandler(string host, short port): host_(host), port_(port), io_service_(), socket_(io_service_),fs(),fileName(){}
@@ -47,14 +47,14 @@ bool ConnectionHandler::getLine(std::string& line) {
 }
 
 
-bool ConnectionHandler::decode(mutex * mtx){
+bool ConnectionHandler::decode(){
     char op[2];
 
     if(!getBytes(op,2)){
         return false;
     }
 
-    mtx->try_lock(); //LOCK mtx start decoding
+    mtx.try_lock(); //LOCK mtx start decoding
  //  std::cout << "start decode  -  opcode - " << std::to_string(op[1]) << std::endl;
     switch(op[1]) {
         case 3: // DATA DECODE
@@ -81,9 +81,6 @@ bool ConnectionHandler::decode(mutex * mtx){
                     }
                 }
               //  std::cout << "< ";
-                if ((unsigned int)bytesToShort(packetSize) < 512) {//TODO check databytes size , need to be 512 sometimes
-                    keepListen = false;
-                }
             } else { //RRQ DECODE
                 try {
             //        std::cout << "data bytes size " << strlen(&dataBytes[0]) << "  " << bytesToShort(packetSize) << std::endl;
@@ -95,7 +92,7 @@ bool ConnectionHandler::decode(mutex * mtx){
                     errorMessage[2] = 0;
                     errorMessage[3] = 2;
                     sendBytes(errorMessage, 4);
-                    mtx->unlock(); //UNLOCK MTX
+                    mtx.unlock(); //UNLOCK MTX
                     break;
 
                 }
@@ -103,7 +100,7 @@ bool ConnectionHandler::decode(mutex * mtx){
                     fileName = "";
                         std::cout << "closing fs!" <<std::endl;
                     fs.close();
-                    keepListen = false;
+
 
                 }
             }
@@ -115,7 +112,7 @@ bool ConnectionHandler::decode(mutex * mtx){
 
             sendBytes(ackMessage, 4);
             if((unsigned int)bytesToShort(packetSize) < 512){
-                mtx->unlock(); //UNLOCK MTX
+                mtx.unlock(); //UNLOCK MTX
             }
 
             break;
@@ -125,7 +122,7 @@ bool ConnectionHandler::decode(mutex * mtx){
             if(diconnectSend){
                 disconnect=true;
                 std::cout <<"disconeeeeect" << std::endl;
-                mtx->unlock(); //UNLOCK MTX
+                mtx.unlock(); //UNLOCK MTX
             }
             char blockNumberA[2];
             char packetSize[2];
@@ -188,10 +185,10 @@ bool ConnectionHandler::decode(mutex * mtx){
                 if (dataSize < 512) {
                  //   std::cout << "fs close!" <<std::endl;
                     fs.close();
-                    mtx->unlock(); //UNLOCK MTX
+                    mtx.unlock(); //UNLOCK MTX
                 }
             } else {
-                mtx->unlock(); //UNLOCK MTX
+                mtx.unlock(); //UNLOCK MTX
             }
     }
             break;
@@ -200,13 +197,12 @@ bool ConnectionHandler::decode(mutex * mtx){
             getBytes(errorCode, 2);
             std::cout << "> Error " + std::to_string(errorCode[1]) << std::endl;
             string errorMessage;
-            keepListen = false;
 
             if(fsMode == 'R') //Delete the local file
                 std::remove(fileName.c_str());
             fs.close();
             fileName = "";
-            mtx->unlock(); //UNLOCK MTX
+            mtx.unlock(); //UNLOCK MTX
             return getFrameAscii(errorMessage, '\0');
 
         }
@@ -223,13 +219,12 @@ bool ConnectionHandler::decode(mutex * mtx){
             string fileADName;
             getFrameAscii(fileADName, '\0');
             std::cout << "> BCAST " << state << " " << fileADName << std::endl;
-            keepListen = false;
-            mtx->unlock(); //UNLOCK MTX
+
+            mtx.unlock(); //UNLOCK MTX
 			break;
         }
         default: {
-            keepListen = false;//TODO: check if needed
-            mtx->unlock(); //UNLOCK MTX
+            mtx.unlock(); //UNLOCK MTX
             return false;
             break;
         }

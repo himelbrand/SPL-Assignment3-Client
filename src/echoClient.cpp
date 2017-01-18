@@ -11,7 +11,6 @@ std::queue<std::string> lineQueue;
 */
 
 
-std::mutex mtx;
 
 void run(ConnectionHandler *connectionhandler) {
     std::cout << "< ";
@@ -23,9 +22,9 @@ void run(ConnectionHandler *connectionhandler) {
         std::string line(buf);
         lineQueue.push(line);
         std::cout << "< ";
-        mtx.lock();
+        ConnectionHandler::mtx.lock();
         connectionhandler->sendLine(line);
-        mtx.unlock();
+        ConnectionHandler::mtx.unlock();
     }
 }
 
@@ -50,7 +49,7 @@ int main (int argc, char *argv[]) {
     boost::thread th1(boost::bind(run, &connectionHandler));
 
     while (!ConnectionHandler::disconnect) {
-            connectionHandler.decode(&mtx);
+            connectionHandler.decode();
         }
     return 0;
     }
