@@ -256,7 +256,7 @@ bool ConnectionHandler::getBytes(char bytes[], unsigned int bytesToRead) {
 bool ConnectionHandler::sendBytes(const  char bytes[], int bytesToWrite) {
 
 for(int i =0 ; i< bytesToWrite;i++){
-    cout <<"extbyte: "<< to_string(bytes[i]) <<endl;
+    cout <<"nextbyte: "<< to_string(bytes[i]) <<endl;
     cout <<"len: "<< i <<endl;
 }
    // std::cout <<"opcode : " << std::to_string(bytes[1]) << std::endl;

@@ -1,6 +1,6 @@
 #ifndef CONNECTION_HANDLER__
 #define CONNECTION_HANDLER__
-                                           
+
 #include <string>
 #include <iostream>
 #include <boost/asio.hpp>
@@ -9,14 +9,16 @@
 
 using namespace std;
 using boost::asio::ip::tcp;
+
 class byteObj{
 public:
     byteObj (int bytesArraySize, char * bytesArray) : _bytesArraySize(bytesArraySize), _bytesArray(bytesArray) {}
-    ~byteObj (){
+    virtual ~byteObj (){
         delete[] this->_bytesArray;
         this->_bytesArraySize = 0;
     }
     byteObj () : _bytesArraySize(0), _bytesArray(nullptr) {}
+
     int _bytesArraySize;
     char * _bytesArray;
 };
@@ -36,7 +38,7 @@ private:
     void shortToBytes(short num, char* bytesArr);
 
 
- 
+
 public:
 
     ConnectionHandler(std::string host, short port);
@@ -51,34 +53,34 @@ public:
     bool decode(mutex *mtx);
     // Connect to the remote machine
     bool connect();
- 
+
     // Read a fixed number of bytes from the server - blocking.
     // Returns false in case the connection is closed before bytesToRead bytes can be read.
     bool getBytes(char bytes[], unsigned int bytesToRead);
- 
+
 	// Send a fixed number of bytes from the client - blocking.
     // Returns false in case the connection is closed before all the data is sent.
     bool sendBytes(const char bytes[], int bytesToWrite);
-	
+
     // Read an ascii line from the server
     // Returns false in case connection closed before a newline can be read.
     bool getLine(std::string& line);
-	
+
 	// Send an ascii line from the server
     // Returns false in case connection closed before all the data is sent.
     bool sendLine(std::string& line);
- 
+
     // Get Ascii data from the server until the delimiter character
     // Returns false in case connection closed before null can be read.
     bool getFrameAscii(std::string& frame, char delimiter);
- 
+
     // Send a message to the remote host.
     // Returns false in case connection is closed before all the data is sent.
     bool sendFrameAscii(const std::string& frame, char delimiter);
-	
+
     // Close down the connection properly.
     void close();
- 
+
 }; //class ConnectionHandler
 
 

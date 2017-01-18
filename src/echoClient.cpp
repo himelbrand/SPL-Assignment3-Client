@@ -12,13 +12,15 @@ std::queue<std::string> lineQueue;
 std::mutex mtx;
 
 void run(ConnectionHandler *connectionhandler) {
+    std::cout << "< ";
     while (true) {
         const short bufsize = 1024;
         char buf[bufsize];
-        std::cout << "< ";
+
         std::cin.getline(buf, bufsize);
         std::string line(buf);
         lineQueue.push(line);
+        std::cout << "< ";
         mtx.lock();
         connectionhandler->sendLine(line);
         mtx.unlock();
