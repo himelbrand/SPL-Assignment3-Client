@@ -278,6 +278,7 @@ byteObj ConnectionHandler::encodeInput(std::string &message){
     std::vector<std::string> words;
     boost::split(words, message, boost::is_space());
 	std::string command = words.at(0);
+    fsMode = 'N';
 
   //  std::cout << "command : " +command << std::endl;
     if(command=="RRQ"){ //READ ENCODE
