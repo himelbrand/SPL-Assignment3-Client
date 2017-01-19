@@ -21,10 +21,10 @@ void run(ConnectionHandler *connectionhandler) {
         std::cin.getline(buf, bufsize);
         std::string line(buf);
         lineQueue.push(line);
-        std::cout << "< ";
         ConnectionHandler::mtx.lock();
         connectionhandler->sendLine(line);
         ConnectionHandler::mtx.unlock();
+        std::cout << "< ";
     }
 }
 

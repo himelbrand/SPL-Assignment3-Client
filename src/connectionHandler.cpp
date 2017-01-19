@@ -67,6 +67,7 @@ bool ConnectionHandler::decode(){
             getBytes(dataBytes, (unsigned int)bytesToShort(packetSize));
             if (!fs.is_open()) { //DIRQ DECODE
                 bool newWord = true;
+                int i=0;
                 for(char c:dataBytes){
                     if(c == 0) {
                         std::cout << "" << std::endl;
@@ -74,12 +75,17 @@ bool ConnectionHandler::decode(){
                     }
                     else {
                         if(newWord) {
-                            std::cout << "> ";
+                            if(i ==0)
+                            std::cout << "\n> ";
+                            else
+                                std::cout << "> ";
                             newWord = false;
                         }
                         std::cout << c;
                     }
+                    i++;
                 }
+                std::cout << "< "<<std::flush;
               //  std::cout << "< ";
             } else { //RRQ DECODE
                 try {
@@ -128,7 +134,9 @@ bool ConnectionHandler::decode(){
             char packetSize[2];
             getBytes(blockNumberA, 2);
             short bN = bytesToShort(blockNumberA);
-            std::cout << "> ACK " + std::to_string(bN) << std::endl;
+            std::cout << "\n> ACK " + std::to_string(bN) << std::endl;
+            std::cout << "< " <<std::flush;
+
             if (fs.is_open()) { //WRQ DECODE
 
                 char dataBytesTemp[512];
@@ -181,7 +189,7 @@ bool ConnectionHandler::decode(){
               // std::cout << "> data  size " << dataSize     << std::endl;
 
                 sendBytes(dataMessage, dataSize +6);
-                cout << "send DATA " << endl;
+              //  cout << "send DATA " << endl;
                 if (dataSize < 512) {
                  //   std::cout << "fs close!" <<std::endl;
                     fs.close();
@@ -195,7 +203,8 @@ bool ConnectionHandler::decode(){
         case 5: {//ERROR DOCODE
             char errorCode[2];
             getBytes(errorCode, 2);
-            std::cout << "> Error " + std::to_string(errorCode[1]) << std::endl;
+            std::cout << "\n> Error " + std::to_string(errorCode[1]) << std::endl;
+            std::cout << "< " << std::flush;
             string errorMessage;
 
             if(fsMode == 'R') //Delete the local file
@@ -218,8 +227,8 @@ bool ConnectionHandler::decode(){
             }
             string fileADName;
             getFrameAscii(fileADName, '\0');
-            std::cout << "> BCAST " << state << " " << fileADName << std::endl;
-
+            std::cout << "\n> BCAST " << state << " " << fileADName << std::endl;
+            std::cout << "< " << std::flush;
             ConnectionHandler::mtx.unlock(); //UNLOCK MTX
 			break;
         }
@@ -251,8 +260,8 @@ bool ConnectionHandler::getBytes(char bytes[], unsigned int bytesToRead) {
 bool ConnectionHandler::sendBytes(const  char bytes[], int bytesToWrite) {
 
 for(int i =0 ; i< bytesToWrite;i++){
-    cout <<"nextbyte: "<< to_string(bytes[i]) <<endl;
-    cout <<"len: "<< i <<endl;
+  // cout <<"nextbyte: "<< to_string(bytes[i]) <<endl;
+  //  cout <<"len: "<< i <<endl;
 }
    // std::cout <<"opcode : " << std::to_string(bytes[1]) << std::endl;
     int tmp = 0;
@@ -385,7 +394,6 @@ byteObj ConnectionHandler::encodeInput(std::string &message){
        // return bytes;
 
 	}else if(command=="DELRQ"){
-        std::cout << "V3" << std::endl;
         if(words.size() == 2){
             char  * bytes = new char[words.at(1).length() +3];
 
@@ -422,7 +430,7 @@ bool ConnectionHandler::sendLine(std::string& line) {
         if(encodeMessage._bytesArray != nullptr){
 
 
-            std::cout << "send bytes size is " << encodeMessage._bytesArray[0] << std::endl;
+   //         std::cout << "send bytes size is " << encodeMessage._bytesArray[0] << std::endl;
             bool send =  sendBytes(encodeMessage._bytesArray, encodeMessage._bytesArraySize);
 
             return send;
