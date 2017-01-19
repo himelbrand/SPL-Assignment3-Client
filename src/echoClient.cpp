@@ -17,15 +17,19 @@ void run(ConnectionHandler *connectionhandler) {
     while (true) {
         const short bufsize = 1024;
         char buf[bufsize];
-
         std::cin.getline(buf, bufsize);
         std::string line(buf);
         lineQueue.push(line);
-        ConnectionHandler::mtx.lock();
+       // ConnectionHandler::mtx.lock();
+		boost::mutex::scoped_lock f(ConnectionHandler::mtx);
         connectionhandler->sendLine(line);
-        ConnectionHandler::mtx.unlock();
-        std::cout << "< ";
+        //ConnectionHandler::mtx.unlock();
+		if(line=="DISC")
+			break;
+		else
+        	std::cout << "< ";
     }
+	cout<<"while broke!!!!!!!!!!!!!!!!!!!!"<<endl;
 }
 
 int main (int argc, char *argv[]) {
@@ -47,11 +51,12 @@ int main (int argc, char *argv[]) {
     }
 
     boost::thread th1(boost::bind(run, &connectionHandler));
-
     while (!ConnectionHandler::disconnect) {
             connectionHandler.decode();
-        }
-    return 0;
+	}
+	//th1.interrupt();
+	th1.join();
+	return 0;
     }
 
 
