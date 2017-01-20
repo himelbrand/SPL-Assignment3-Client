@@ -10,24 +10,36 @@
 using namespace std;
 using boost::asio::ip::tcp;
 
+/**
+ * This class represents a packet message ,
+ * it's fields are  char array and the size of the char array
+ */
 class byteObj{
 public:
+	//Constructor
     byteObj (int bytesArraySize, char * bytesArray) : _bytesArraySize(bytesArraySize), _bytesArray(bytesArray) {}
+	//Destructor
     virtual ~byteObj (){
         delete[] this->_bytesArray;
         this->_bytesArraySize = 0;
     }
+	//Assignment operator
 	byteObj& operator=(const byteObj &other){
 		this->_bytesArray = other._bytesArray;
 		this->_bytesArraySize = other._bytesArraySize;
 		return *this;
 	}
+	//Copy constructor
 	byteObj(const byteObj &other):_bytesArraySize(other._bytesArraySize),_bytesArray(other._bytesArray){}
+	//Constructor for null pointer bytes array
     byteObj () : _bytesArraySize(0), _bytesArray(nullptr) {}
 
+	//represents the size of the packet message
     int _bytesArraySize;
+	//represents the packet message
     char * _bytesArray;
-};
+};//class byteObj
+
 
 class ConnectionHandler {
 private:
@@ -37,7 +49,10 @@ private:
 	tcp::socket socket_;
 
     std::fstream fs;
+	//describe the transaction that occurring right now
+	//W - write, R-read, N- not read and not write
     char fsMode;
+	//The name of the file in use in case of write/read transaction
     std::string fileName;
 
     short bytesToShort(char* bytesArr);
@@ -50,11 +65,11 @@ public:
     ConnectionHandler(std::string host, short port);
     virtual ~ConnectionHandler();
 
-
+	//tells if the user decided to disconnect or not
     static bool disconnect;
+	//used for synchronized between the two threads
     static boost::mutex mtx;
-
-
+	//represents a packet message send to the server
     byteObj encodeInput(std::string & message);
     bool decode();
     // Connect to the remote machine
