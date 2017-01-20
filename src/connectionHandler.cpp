@@ -97,7 +97,7 @@ bool ConnectionHandler::decode(){
 				}
                 //Means the last data packet as arrived
 				if (bytesToShort(packetSize) < 512) {
-					std::cout <<"RRQ " << fileName << " complete" <<std::endl;
+					std::cout <<"> RRQ " << fileName << " complete" <<std::endl;
 					std::cout << "< "<<std::flush;
 					fileName = "";
 					fs.close();
@@ -182,8 +182,11 @@ bool ConnectionHandler::decode(){
 				} else {
 					if(fsMode != 'W')
 					std::cout << "< " << std::flush;
-					else
+					else{
 						fsMode = 'N';
+                        std::cout <<"> WRQ " << fileName << " complete" <<std::endl;
+                        fileName = "";
+                        }
 				}
 			}
 		}
@@ -294,6 +297,7 @@ byteObj ConnectionHandler::encodeInput(std::string &message){
 			return byteObj(i +1,bytes);
 		}else{
 			std::cout << "< *please enter one file name" << std::endl;
+            std::cout << "< " << std::flush;
 		}
 
 
@@ -312,16 +316,21 @@ byteObj ConnectionHandler::encodeInput(std::string &message){
 				bytes[i] = c;
 				i++;
 			}
+
 			bytes[i] = '\0' ;
+
 			fs.open(words.at(1),std::ios::in | std::ios::binary);
 			if(!fs.good()){
 				std::cout << "< *File not exist!!" << std::endl;
+				std::cout << "< " << std::flush;
 				fs.close();
 				return byteObj();
 			}
+            fileName = words.at(1);
 			return byteObj(i + 1,bytes);
 		}else{
 			std::cout << "< *Please add one file" << std::endl;
+			std::cout << "< " << std::flush;
 		}
 	}else if(command =="LOGRQ"){
         //Check if the client command is legal
@@ -339,6 +348,8 @@ byteObj ConnectionHandler::encodeInput(std::string &message){
 			return byteObj(i + 1,bytes);
 		}else{
 			std::cout << "< *Please enter a valid username" << std::endl;
+            std::cout << "< " << std::flush;
+            return  byteObj();
 		}
 	}else if(command=="DIRQ"){
 		char  * bytes = new char[2];
@@ -371,6 +382,8 @@ byteObj ConnectionHandler::encodeInput(std::string &message){
 		diconnectSend = true;
 		return byteObj(2,bytes);
 	}
+    std::cout << "< *not valid command" <<  std::endl;
+    std::cout << "< " <<  std::flush;
 	return byteObj();
 
 }
@@ -385,7 +398,6 @@ bool ConnectionHandler::sendLine(std::string& line) {
 			bool send =  sendBytes(encodeMessage._bytesArray, encodeMessage._bytesArraySize);
 			return send;
 		}else{
-			std::cout << "not valid command" <<  std::endl;
 			return false;
 		}
 	} else{
